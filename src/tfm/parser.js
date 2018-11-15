@@ -210,8 +210,6 @@ class TFMParser {
       this.table_pointers[table+1] = this.position_in_table(table, this.table_lengths[table]);
     }
     
-    console.log(this.table_pointers);
-    
     //////////////////////
     // Sanity check
     var length = this.position_in_table(tables.font_parameter, this.table_lengths[tables.font_parameter]);
@@ -472,7 +470,6 @@ class TFMParser {
         var ligature_char_code = remainder;
         
         // Fixme: self registration ?
-        console.log("TFM=",this.tfm);
         new Tfm.TfmLigature(this.tfm,
                             i,
                             stop,
@@ -618,9 +615,7 @@ class TFMParser {
   }
 }
 
-var font_dir = '/usr/share/texmf-dist/fonts/tfm/public/cm/';
-var name = 'cmr10';
-var path = [font_dir, name].join('/') + '.tfm';
-var tfm = new TFMParser(name, path);
-
-module.exports = TFMParser;
+module.exports.parse = function(font_name, filename) {
+  var p = new TFMParser(font_name, filename);
+  return p.tfm;
+};
