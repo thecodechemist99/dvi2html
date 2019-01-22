@@ -34,19 +34,28 @@ var metadata = { num: 0, den: 0, mag: 0, s: 0 };
 var fonts = [];
 var pictureDepth = 0;
 
-/**
- * scaleDim(measurement)
- *
- * Scales the given measurement by the documents specified `num`, `den`,
- * and `mag` properties (defined in the preamble).
- * 
- */
-function scaleDim(measurement) {
-  //  `7227` TeX units in `254` cm
-  //  den = 7227 * 2^16
-  // 0.035277778 pts = 1 cm
-  return ((measurement * metadata.num) / (metadata.mag * metadata.den)) * 0.035277778;
+function intToHex(n) {
+  return ("00" + Math.round(n).toString(16)).substr(-2);
 }
+
+function texColor(name) {
+  if (name == 'gray 0') return 'black';
+  if (name == 'gray 1') return 'white';
+
+  if (name.startsWith('rgb ')) {
+    return '#' + name.split(' ').slice(1).map( function(x) { return intToHex(parseFloat(x) * 255); } ).join('');
+  }
+
+  if (name.startsWith('gray ')) {
+    var x = name.split(' ')[1];
+    return texColor('rgb ' + x + ' ' + x + ' ' + x );
+  }
+
+  return 'black';
+}
+
+var currentColor = texColor('gray 0');
+var colorStack = [  ];
 
 function getParamOffset(opcode, offset, file) {
   //  preamble values
@@ -66,19 +75,21 @@ function getParamOffset(opcode, offset, file) {
       var b = file.slice(offset, offset + 4).readIntBE(0, 4); offset += 4;
       // bottom left corner of box at (h,v)
 
-      a = a * conversionFactor;
-      b = b * conversionFactor;    
-    
-      var left = pos[0] * conversionFactor;
+    var left = pos[0] * conversionFactor;
     var bottom = pos[1] * conversionFactor;
+
+    if(opcode === 132) pos[0] += b;
+    
+    a = a * conversionFactor;
+    b = b * conversionFactor;    
+    
     var top = bottom - a;
     if ((a > 0) && (b > 0)) {
       log(`Set rule at (${left},${bottom}) and size (${a},${b})`);
       if (pictureDepth == 0)      
-        output = output + `<span style="background: black; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; height: ${a}pt;"></span>\n`;
+        output = output + `<span style="background: ${currentColor}; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; height: ${a}pt;"></span>\n`;
     }
 
-    if(opcode === 132) pos[0] += b;
 
     break;
     case 138:
@@ -220,18 +231,18 @@ function getParamOffset(opcode, offset, file) {
         var tfm2dvi = fonts[f].metrics.design_font_size/(1048576.0) * 65536 / 1048576;
 	//var top = (pos[1] - m.height*tfm2dvi) * conversionFactor;
         var top = (pos[1] - m.height*tfm2dvi) * conversionFactor;
-        pos[0] += m.width * tfm2dvi;
+        pos[0] += m.width * tfm2dvi * fonts[f].scaleFactor / fonts[f].designSize;
         
         var width = m.width * conversionFactor * tfm2dvi;
         var height = (m.height) * conversionFactor * tfm2dvi;
-        var depth = (m.depth) * conversionFactor * tfm2dvi;// (-m.height) * conversionFactor;
+        var depth = (m.depth) * conversionFactor * tfm2dvi;
 
         // BOX
         //output = output + `<span style="font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top}pt; left: ${left}pt; background: #EEE; overflow: visible; width:${width}pt; line-height: ${fontsize}pt; height: ${height+depth}pt;"></span>`;
 
         var top = (pos[1]) * conversionFactor;
         if (pictureDepth == 0) {
-          output = output + `<span style="font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top-height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${c}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>`;
+          output = output + `<span style="color: ${currentColor}; font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top-height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${c}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>`;
         } else {
           bottom = (pos[1]) * conversionFactor;
           // No 'pt' on fontsize since those units are potentially scaled
@@ -367,20 +378,31 @@ function getParamOffset(opcode, offset, file) {
         log('Opcode:' + i);
         log('SPECIAL: ' + '"' + x.toString() + '"' );
 
-        if (x.toString().startsWith('color ')) {
-          log("COLOR: " + x);
+        x = x.toString();
+        
+        if (x.startsWith('color ')) {
+          if (x.startsWith('color push ')) {
+            colorStack.push( currentColor );
+            currentColor = texColor(x.replace('color push ',''));
+            log("COLOR: " + currentColor );
+          }
+
+          if (x.startsWith('color pop')) {
+            currentColor = colorStack.pop();
+            log("COLOR: " + currentColor );
+          }
         }
 
-        if (x.toString() == 'ximera begin-picture') {
+        if (x == 'ximera begin-picture') {
           pictureDepth++;
         }
 
-        if (x.toString() == 'ximera end-picture') {
+        if (x == 'ximera end-picture') {
           pictureDepth--;          
         }
         
-        if (x.toString().startsWith('dvisvgm:raw')) {
-          x = x.toString();
+        if (x.startsWith('dvisvgm:raw')) {
+          x = x;
           x = x.replace(/{\?nl}/g, "\n");
 
           var left = pos[0] * conversionFactor;
