@@ -32,7 +32,7 @@ var stack = [];
 var pos = [ 0, 0, 0, 0, 0, 0 ];
 var metadata = { num: 0, den: 0, mag: 0, s: 0 };
 var fonts = [];
-var pictureStack = [ ];
+var pictureDepth = 0;
 
 /**
  * scaleDim(measurement)
@@ -74,7 +74,8 @@ function getParamOffset(opcode, offset, file) {
     var top = bottom - a;
     if ((a > 0) && (b > 0)) {
       log(`Set rule at (${left},${bottom}) and size (${a},${b})`);
-      output = output + `<span style="background: black; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; height: ${a}pt;"></span>\n`;
+      if (pictureDepth == 0)      
+        output = output + `<span style="background: black; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; height: ${a}pt;"></span>\n`;
     }
 
     if(opcode === 132) pos[0] += b;
@@ -229,12 +230,13 @@ function getParamOffset(opcode, offset, file) {
         //output = output + `<span style="font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top}pt; left: ${left}pt; background: #EEE; overflow: visible; width:${width}pt; line-height: ${fontsize}pt; height: ${height+depth}pt;"></span>`;
 
         var top = (pos[1]) * conversionFactor;
-        if (pictureStack.length == 0) {
+        if (pictureDepth == 0) {
           output = output + `<span style="font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top-height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${c}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>`;
         } else {
           bottom = (pos[1]) * conversionFactor;
           // No 'pt' on fontsize since those units are potentially scaled
           output = output + `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${fontname}; font-size: ${fontsize};">${c}</text>`;
+          console.log("TEXT: " + c );
         }
         
       }
@@ -270,7 +272,8 @@ function getParamOffset(opcode, offset, file) {
 	console.log(pos);
 
         if (b * conversionFactor > 1.0)
-        output = output +`<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;        
+          if (pictureDepth == 0)
+            output = output +`<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;        
       }
       else if(opcode >= 147 && opcode <= 151) {
         // wi
@@ -288,7 +291,8 @@ function getParamOffset(opcode, offset, file) {
         log('wi: ' + pos[0]);
 
         if (pos[2] * conversionFactor > 1.0)
-        output = output +`<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;
+          if (pictureDepth == 0)          
+            output = output +`<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;
       }
       else if(opcode >= 152 && opcode <= 156) {
         // xi
@@ -307,7 +311,8 @@ function getParamOffset(opcode, offset, file) {
         log('xi: ' + pos[0]);
 
         if (pos[3] * conversionFactor > 1.0)
-        output = output + `<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;
+          if (pictureDepth == 0)          
+            output = output + `<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;
 
       }
       else if(opcode >= 157 && opcode <= 160) {
@@ -367,11 +372,11 @@ function getParamOffset(opcode, offset, file) {
         }
 
         if (x.toString() == 'ximera begin-picture') {
-          pictureStack.push(Object.assign({}, pos));
+          pictureDepth++;
         }
 
         if (x.toString() == 'ximera end-picture') {
-          pictureStack.pop();
+          pictureDepth--;          
         }
         
         if (x.toString().startsWith('dvisvgm:raw')) {
