@@ -90,8 +90,12 @@ class TFMParser {
 
   read_four_byte_numbers_in_table(table, index) {
         /*** Return the four numbers in table *table* at index *index*. 
-        ***/
-    return this.read_four_byte_numbers(this.position_in_table(table, index));
+         ***/
+    this.seek_to_table(this.position_in_table(table, index));
+    return [ this.read_unsigned_byte1(),
+             this.read_unsigned_byte1(),
+             this.read_unsigned_byte1(),
+             this.read_unsigned_byte1() ];
   }
 
   read_extensible_recipe(index) {
@@ -120,6 +124,11 @@ class TFMParser {
 
   // BADBAD
   read_bcpl(position) {
+    if (position) this.position = position;
+    var length = this.read_unsigned_byte1();
+    var result = this.stream.slice( this.position, this.position + length ).toString('ascii');
+    this.position += this.length;
+    return result;
   }
   
   seek_to_table(table, position) {
@@ -346,10 +355,10 @@ class TFMParser {
   read_font_parameters() {
     this.seek_to_table(tables.font_parameter);
     var stream = this;
- 
+
     if (this.tfm.character_coding_scheme == 'TeX math italic') {
       // undocumented in tftopl web
-      throw 'undocumented character coding scheme';
+      //throw 'undocumented character coding scheme';
     } else {
       // Read the seven fix word parameters
       this.tfm.set_font_parameters( [...Array(7).keys()].map( function() { return stream.read_fix_word(); } ) );

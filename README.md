@@ -1,5 +1,7 @@
 # DVI Parser
 
+Converted from https://github.com/FabriceSalvaire/PyDVI
+
 The goal with this project is to eventually have a complete [DVI](https://en.wikipedia.org/wiki/Device_independent_file_format) toolset
 written in node. Once complete, this will hopefully be used to implement
 TeX document conversions completely in node (particularly a highly configurable

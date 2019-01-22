@@ -1,7 +1,10 @@
 var fs = require('fs');
 var exec = require('child_process').execSync;
 
-var font_dir = '/usr/local/texlive/2015/texmf-dist/fonts/tfm/public';
+// should reference
+// https://github.com/FabriceSalvaire/PyDVI/blob/master/PyDvi/Font/TfmParser.py
+
+var font_dir = '/usr/share/texmf-dist/fonts/tfm/public/cm/';
 
 var metadata = [
   {
@@ -144,14 +147,87 @@ function processField(field, content) {
   return field;
 }
 
-function processMetrics() {
-  var i = 0, j = 24, section;
-
-
-  while(i < metadata.length && j < buffer.length) {
-    j += processSection(++i, j);
+function readFixWords(buffer, index, count) {
+  var table = [];
+  var k;
+  for( var k = 0; k<count; k++ ) {
+    table[k] = buffer.slice(index, index+4).readUInt32BE(0);
+    index = index + 4;
   }
+  return table;
+}
+
+function processMetrics() {
+  //j += processSection(1, j);
+
+  /*
+  while(i < metadata.length && j < buffer.length) {
+
+  }
+  */
   
+  var parameters = [];
+
+  metadata.forEach(function(nameValue) {
+    parameters[nameValue.name] = nameValue.length;
+  });
+
+  var headerLength = parameters['Header'];
+  var j = 4*(headerLength + 1);
+
+  var header = processField( metadata[1], buffer.slice( 24, j ) );
+  console.log( JSON.stringify(header) );
+                             
+  
+  var firstCharCode = parameters['First char code'];
+  var lastCharCode = parameters['Last char code'];
+  var widthTableLength = parameters['Width table length'];
+  var heightTableLength = parameters['Height table length'];
+  var depthTableLength = parameters['Depth table length'];
+  var italicTableLength = parameters['Italic table length'];
+  var ligkernTableLength = parameters['Lig/kern table length'];
+  var kernTableLength = parameters['Kern table length'];
+  var extenTableLength = parameters['Ext char table length'];
+  var paramTableLength = parameters['Font parameters'];
+
+  var charInfo = [];
+  var charCode;
+  for( charCode=firstCharCode; charCode<lastCharCode; charCode++ ) {
+    charInfo[charCode] = buffer.slice(j, j+4).readUInt32BE(0);
+    j = j + 4;
+  }
+  //console.log("charinfo=",charInfo);
+
+  var widthTable = readFixWords( buffer, j, widthTableLength);
+  j = j + 4*widthTableLength;
+
+  var heightTable = readFixWords( buffer, j, heightTableLength);
+  j = j + 4*heightTableLength;
+
+  var depthTable = readFixWords( buffer, j, depthTableLength);
+  j = j + 4*depthTableLength;
+
+  var italicTable = readFixWords( buffer, j, italicTableLength);
+  j = j + 4*italicTableLength;
+
+  var ligkernTable = readFixWords( buffer, j, ligkernTableLength);
+  j = j + 4*ligkernTableLength;
+
+  var kernTable = readFixWords( buffer, j, kernTableLength);
+  j = j + 4*kernTableLength;
+
+  var extenTable = readFixWords( buffer, j, extenTableLength);
+  j = j + 4*extenTableLength;
+
+  var paramTable = readFixWords( buffer, j, paramTableLength);
+  j = j + 4*paramTableLength;            
+
+  console.log(j);
+
+  
+  
+  //there then follow the four tables width, height, depth and italic, which contain values (in fix_word format) referred to by indexes in char_info.
+    
   // after header, char_code tables
   // 32-bit (1 for each character, end_char_code - start_char_code)
   // width_index: 8bits
@@ -202,12 +278,15 @@ function processMetrics() {
 }
 
 function getMetricsFile(name) {
-  var path = exec('find ' + [font_dir, '**', name].join('/') + '.tfm' ).toString('utf8');
-  buffer = fs.readFileSync(path.replace(/^[\s\n\t]+|[\s\n\t]+$/, ''));
+  var path = [font_dir, name].join('/') + '.tfm';
+  //path = path.replace(/^[\s\n\t]+|[\s\n\t]+$/, '')
+  console.log("PATH=",path);
+  buffer = fs.readFileSync(path);
 }
 
 getMetricsFile('cmr10');
 processFileInfo();
+console.log("buffer.length=",buffer.length);
 processMetrics();
 
 module.exports = {
