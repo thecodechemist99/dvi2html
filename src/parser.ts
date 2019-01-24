@@ -1,24 +1,19 @@
-var fs = require('fs');
+import * as fs from "fs";
+import { execSync } from "child_process";
+import * as TFMParser from "./tfm/parser";
 
-var execSync = require('child_process').execSync;
-var TFMParser = require('./tfm/parser');
 function loadFont(name) {
   var path = execSync('kpsewhich ' + name + '.tfm').toString().split("\n")[0];
   var tfm = TFMParser.parse(name, path);
   return tfm;
 }
 
-var debug = true;
-
-function log(message, color, force) {
-  if(!debug && (force || color) !== true ) return;
-  if(color === true) color = '';
-
+function log(message) {
+  let color = false;
+ 
   console.log(
     '%s %s %s',
-    color ? '\033[' + color + 'm' : '',
-    message,
-    color ? '\033[0m' : ''
+    message
   );
 }
 
@@ -28,8 +23,7 @@ var dviUnit = 1.0;
 
 var f;
 var stack = [];
-//          h  v  w  x  y  z  
-var pos = [ 0, 0, 0, 0, 0, 0 ];
+var pos = { h: 0, v: 0, w: 0, x: 0, y: 0, z: 0 };
 var metadata = { num: 0, den: 0, mag: 0, s: 0 };
 var fonts = [];
 var pictureDepth = 0;
@@ -75,10 +69,10 @@ function getParamOffset(opcode, offset, file) {
       var b = file.slice(offset, offset + 4).readIntBE(0, 4); offset += 4;
       // bottom left corner of box at (h,v)
 
-    var left = pos[0] * conversionFactor;
-    var bottom = pos[1] * conversionFactor;
+    var left = pos.h * conversionFactor;
+    var bottom = pos.v * conversionFactor;
 
-    if(opcode === 132) pos[0] += b;
+    if(opcode === 132) pos.h += b;
     
     a = a * conversionFactor;
     b = b * conversionFactor;    
@@ -92,15 +86,17 @@ function getParamOffset(opcode, offset, file) {
 
 
     break;
+    
     case 138:
-      log('NOP', 35);
+      log('NOP');
     break;
+    
     case 139:
       // Beginning of a page (BOP):
       // Set stack empty 
       stack = [];
       // and (h,v,w,x,y,z):=(0,0,0,0,0,0)
-      pos   = [ 0, 0, 0, 0, 0, 0 ];
+      pos = { h: 0, v: 0, w: 0, x: 0, y: 0, z: 0 };
     
       // BADBAD: Set font to undefined value
       // f = null;
@@ -117,27 +113,29 @@ function getParamOffset(opcode, offset, file) {
       log('\n==== BOP ====');
       log('[ ' + c.join(', ') + ' ]\n');
     break;
+    
     case 140:
       // End of a page (EOP):
       // Stack should be empty
-      if(stack.length) log('STACK IS NOT EMPTY', 32);
+      if(stack.length) log('STACK IS NOT EMPTY');
       log('\n==== EOP ====\n');
       // PRINT what we have since last BOP
     break;
+    
     case 141:
-      stack.push(Object.assign({}, pos));
-      log('PUSH', 33);
-      //output = output + "<div>";
-      console.log('h: %s, v: %s, w: %s, x: %s, y: %s, z: %s', pos[0], pos[1], pos[2], pos[3], pos[4], pos[5]);
-      pos = [ pos[0], pos[1], pos[2], pos[3], pos[4], pos[5] ];
+      // FIXME
+      stack.push((<any>Object).assign({}, pos));
+      log('PUSH');
+      console.log('h: %s, v: %s, w: %s, x: %s, y: %s, z: %s', pos.h, pos.v, pos.w, pos.x, pos.y, pos.z);
     break;
+    
     case 142:
       // pop and assign values to current h,v,w,x,y,z
       pos = stack.pop();
-      log('POP!', 33);
-      //output = output + "</div>\n";
-      console.log('h: %s, v: %s, w: %s, x: %s, y: %s, z: %s', pos[0], pos[1], pos[2], pos[3], pos[4], pos[5]);
+      log('POP!');
+      console.log('h: %s, v: %s, w: %s, x: %s, y: %s, z: %s', pos.h, pos.v, pos.w, pos.x, pos.y, pos.z);
     break;
+    
     case 247:
       // PREAMBLE !!
       // i[1]
@@ -169,7 +167,7 @@ function getParamOffset(opcode, offset, file) {
       //conversionFactor = conv * 0.3;
       //conversionFactor = conv * 0.3;
       conversionFactor = dviUnit * 72.27 / 100000.0 / 2.54;
-      log('\n=== PREAMBLE ===\n', 36, true);
+      log('\n=== PREAMBLE ===\n');
       log([
         'Format:', i.readUInt8(0), '\n',
         'Numerator:', num.readUInt32BE(0), '\n',
@@ -177,8 +175,9 @@ function getParamOffset(opcode, offset, file) {
         'Magnification:', mag.readUInt32BE(0), '\n',
         'Conversion:', conv, ' points per DVI Unit\n',
         'Comment:', x.toString('ascii'), '\n'
-      ].join(' '), 36, true);
+      ].join(' '));
     break;
+    
     case 248:
       // POSTAMBLE!!!!
       // p[4], num[4], den[4], mag[4], l[4], u[4], s[2], t[2];
@@ -191,7 +190,7 @@ function getParamOffset(opcode, offset, file) {
       s = file.slice(offset, offset+2).readIntBE(0, 2); offset += 2; // max stack depth
       t = file.slice(offset, offset+2).readIntBE(0, 2); offset += 2; // page count
 
-      log('\n=== POSTAMBLE ===\n', 36, true);
+      log('\n=== POSTAMBLE ===\n');
       log([
         'Last BOP:', p, '\n',
         'Numerator:', num, '\n',
@@ -201,12 +200,12 @@ function getParamOffset(opcode, offset, file) {
         'Widest Page:', u, '\n',
         'Max Stack:', s, '\n',
         'Pages:', t, '\n'
-      ].join(' '), 36, true);
+      ].join(' '));
     break;
     case 249:
       // POST POST
       // q[4], i[1]; 223's
-      q = file.slice(offset, offset+4); offset += 4; // pointer to beginning of postamble
+      let q = file.slice(offset, offset+4); offset += 4; // pointer to beginning of postamble
       i = file.slice(offset, offset+1); offset += 1; // see preamble
       offset = file.length;
     break;
@@ -214,24 +213,29 @@ function getParamOffset(opcode, offset, file) {
       if(opcode >= 0 && opcode <= 127) {
         // `set_char_i`
         i = opcode;
-        c = String.fromCharCode(i);
+        let c = String.fromCharCode(i);
 	
-        log('set_char_i: "' + c + '" with code ' + i + ' and font ' + f);
-	
-	if (i < 32)
-	  //c = `&#${160 + i};`;
+	if (i < 32) {
 	  c = `&#${127 + i + 32 + 4};`;
+        }
 
+        if (fonts[f].name == 'esint10') {
+	  c = `&#${180 + i};`;
+        }
+
+        log('set_char_i: "' + c + '" with code ' + i + ' and font ' + fonts[f].name);
+
+        
         var m = fonts[f].metrics.get_char(i);
-	var left = pos[0] * conversionFactor;
+	var left = pos.h * conversionFactor;
 	console.log(pos);
 	var fontname = fonts[f].name;
         var fontsize = 1 * (fonts[f].metrics.design_font_size/1048576.0) * fonts[f].scaleFactor / fonts[f].designSize ;
         // tfm is based on 1/2^16 pt units, rather than dviunit which is 10^−7 meters
         var tfm2dvi = fonts[f].metrics.design_font_size/(1048576.0) * 65536 / 1048576;
-	//var top = (pos[1] - m.height*tfm2dvi) * conversionFactor;
-        var top = (pos[1] - m.height*tfm2dvi) * conversionFactor;
-        pos[0] += m.width * tfm2dvi * fonts[f].scaleFactor / fonts[f].designSize;
+	//var top = (pos.v - m.height*tfm2dvi) * conversionFactor;
+        var top = (pos.v - m.height*tfm2dvi) * conversionFactor;
+        pos.h += m.width * tfm2dvi * fonts[f].scaleFactor / fonts[f].designSize;
         
         var width = m.width * conversionFactor * tfm2dvi;
         var height = (m.height) * conversionFactor * tfm2dvi;
@@ -240,17 +244,17 @@ function getParamOffset(opcode, offset, file) {
         // BOX
         //output = output + `<span style="font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top}pt; left: ${left}pt; background: #EEE; overflow: visible; width:${width}pt; line-height: ${fontsize}pt; height: ${height+depth}pt;"></span>`;
 
-        var top = (pos[1]) * conversionFactor;
+        var top = (pos.v) * conversionFactor;
         if (pictureDepth == 0) {
-          output = output + `<span style="color: ${currentColor}; font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top-height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${c}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>`;
+          output = output + `<span style="color: ${currentColor}; font-family: ${fontname}; font-size: ${fontsize}pt; position: absolute; top: ${top-height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${c}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n`;
         } else {
-          bottom = (pos[1]) * conversionFactor;
+          bottom = (pos.v) * conversionFactor;
           // No 'pt' on fontsize since those units are potentially scaled
-          output = output + `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${fontname}; font-size: ${fontsize};">${c}</text>`;
+          output = output + `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${fontname}; font-size: ${fontsize};">${c}</text>\n`;
           console.log("TEXT: " + c );
         }
         
-      }
+      }    
       else if(opcode >= 128 && opcode <= 131) {
         // `seti c[i]`, set0 = set_char_0, set1 = setting for 128 <= c < 256
         i = opcode - 128;
@@ -275,11 +279,11 @@ function getParamOffset(opcode, offset, file) {
         //  update the horizontal point
         b = file.slice(offset, offset + i).readIntBE(0, i); offset += i;
         
-        var left = pos[0] * conversionFactor;
-        var top = pos[1] * conversionFactor;
+        var left = pos.h * conversionFactor;
+        var top = pos.v * conversionFactor;
         
-        pos[0] += b;
-        log('righti: ' + pos[0]);
+        pos.h += b;
+        log('righti: ' + pos.h);
 	console.log(pos);
 
         if (b * conversionFactor > 1.0)
@@ -291,17 +295,17 @@ function getParamOffset(opcode, offset, file) {
         i = opcode - 147; // 0 <= i <= 4
         
         if(i > 0) {
-          pos[2] = file.slice(offset, offset + i).readIntBE(0, i);
+          pos.w = file.slice(offset, offset + i).readIntBE(0, i);
           offset += i;
         }
 
-        var left = pos[0] * conversionFactor;
-        var top = pos[1] * conversionFactor;
+        var left = pos.h * conversionFactor;
+        var top = pos.v * conversionFactor;
         
-        pos[0] += pos[2];
-        log('wi: ' + pos[0]);
+        pos.h += pos.w;
+        log('wi: ' + pos.h);
 
-        if (pos[2] * conversionFactor > 1.0)
+        if (pos.w * conversionFactor > 1.0)
           if (pictureDepth == 0)          
             output = output +`<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;
       }
@@ -311,17 +315,17 @@ function getParamOffset(opcode, offset, file) {
         i = opcode - 152; // 1 <= i <= 4
 
         if(i > 0) {
-          pos[3] = file.slice(offset, offset + i).readIntBE(0, i);
+          pos.x = file.slice(offset, offset + i).readIntBE(0, i);
           offset += i;
 	}
         
-        var left = pos[0] * conversionFactor;
-        var top = pos[1] * conversionFactor;
+        var left = pos.h * conversionFactor;
+        var top = pos.v * conversionFactor;
         
-        pos[0] += pos[3];
-        log('xi: ' + pos[0]);
+        pos.h += pos.x;
+        log('xi: ' + pos.h);
 
-        if (pos[3] * conversionFactor > 1.0)
+        if (pos.x * conversionFactor > 1.0)
           if (pictureDepth == 0)          
             output = output + `<span style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible; line-height: 0; font-size: 0;">&nbsp;</span>`;
 
@@ -330,32 +334,32 @@ function getParamOffset(opcode, offset, file) {
         // downi
         i = opcode - 156; // 1 <= i <= 4
         a = file.slice(offset, offset + i).readIntBE(0, i); offset += i;
-        pos[1] += a;
-        log('downi: ' + pos[1]);
+        pos.v += a;
+        log('downi: ' + pos.v);
       }
       else if(opcode >= 161 && opcode <= 165) {
         // yi
         i = opcode - 161; // 0 <= i <= 4
 
         if(i > 0) {
-          pos[4] = file.slice(offset, offset + i).readIntBE(0, i);
+          pos.y = file.slice(offset, offset + i).readIntBE(0, i);
           offset += i;
         }
 
-        pos[1] += pos[4];
-        log('yi: ' + pos[1]);
+        pos.v += pos.y;
+        log('yi: ' + pos.v);
       }
       else if(opcode >= 166 && opcode <= 170) {
         // zi
         i = opcode - 166; // 0 <= i <= 4
 
         if(i > 0) {
-          pos[5] = file.slice(offset, offset + i).readIntBE(0, i);
+          pos.z = file.slice(offset, offset + i).readIntBE(0, i);
           offset += i;
         }
 
-        pos[1] += pos[5];
-        log('Y size: ' + pos[1]); 
+        pos.v += pos.z;
+        log('Y size: ' + pos.v); 
       }
       else if(opcode >= 171 && opcode <= 234) {
         // `fnt_num_i (0 <= i <= 63)`
@@ -393,11 +397,11 @@ function getParamOffset(opcode, offset, file) {
           }
         }
 
-        if (x == 'ximera begin-picture') {
+        if (x.startsWith('dvisvgm:raw <svg>')) {
           pictureDepth++;
         }
 
-        if (x == 'ximera end-picture') {
+        if (x.startsWith('dvisvgm:raw </g></svg>')) {
           pictureDepth--;          
         }
         
@@ -405,8 +409,8 @@ function getParamOffset(opcode, offset, file) {
           x = x;
           x = x.replace(/{\?nl}/g, "\n");
 
-          var left = pos[0] * conversionFactor;
-          var top = pos[1] * conversionFactor;
+          var left = pos.h * conversionFactor;
+          var top = pos.v * conversionFactor;
 
           // BADBAD: SVG units should be in points rather than pixels
           x = x.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="0 0 10 10" style="overflow: visible; position: absolute;">`);
@@ -415,7 +419,6 @@ function getParamOffset(opcode, offset, file) {
           x = x.replace(/{\?y}/g, top.toString());
           output = output + x.substr(x.indexOf(" ") + 1);
         }
-        //offset += 1;
       }
       else if(opcode >= 243 && opcode <= 246) {
         // `fnt_defi (1 <= i <= 4);
@@ -423,17 +426,17 @@ function getParamOffset(opcode, offset, file) {
         // k[i]     - font ()
         f = file.slice(offset, offset + i).readIntBE(0, i); offset += i;
         // c[4]     - check sum of `.tfm` file
-        c = file.slice(offset, offset+4); offset += 4;
+        let c = file.slice(offset, offset+4); offset += 4;
         // s[4]     - fixed-point scale factor (applied to char widths of font)
         s = file.slice(offset, offset+4); offset += 4;
         // d[4]     - design-size factors with the magnification (`s/1000`)
-        d = file.slice(offset, offset+4); offset += 4;
+        let d = file.slice(offset, offset+4); offset += 4;
         // a[1]     - length of directory path of font (`./` if a = 0)
         a = file.slice(offset, offset+1).readInt8(0); offset += 1; // UInt
         // l[1]     - length of font name
         l = file.slice(offset, offset+1).readInt8(0); offset += 1; // UInt
         // n[a+l]   - font name (first `a` bytes is dir, remaining `l` = name)
-        n = file.slice(offset, offset + a + l); offset += (a + l);
+        let n = file.slice(offset, offset + a + l); offset += (a + l);
         
         // Font definitions must appear before the first use of a particular
         // font number. 
@@ -445,7 +448,7 @@ function getParamOffset(opcode, offset, file) {
           'Checksum:', c.readUInt32BE(0), '\n',
           'Scale Factor:', s.readUInt32BE(0), '\n',
           'Design Size:', d.readUInt32BE(0), '\n'
-        ].join(' '), 36);
+        ].join(' '));
 
         var name = n.toString('ascii');
         var metrics = loadFont( name );
@@ -460,7 +463,7 @@ function getParamOffset(opcode, offset, file) {
   return offset;
 }
 
-module.exports.dvi2html = function(buffer) {
+export function dvi2html(buffer) {
    var p = 0;
 
   output = "";
@@ -472,8 +475,7 @@ module.exports.dvi2html = function(buffer) {
 
   while(stack.length > 0) {
     stack.pop();
-    output = output + "</div>";
   }
   
   return output;
-};
+}

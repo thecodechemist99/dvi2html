@@ -1,25 +1,27 @@
-var fs = require('fs');
+import * as fs from "fs";
+import { execSync } from "child_process";
+import { dvi2html } from "./src/parser";
 
 console.log("Testing dvi2html");
 
-var execSync = require('child_process').execSync;
 execSync("latex sample/sample.tex");
 
-var filename = 'sample.dvi';
-var stat = fs.statSync(filename);
+let filename = 'sample.dvi';
+let stat = fs.statSync(filename);
 console.log(stat);
-var buffer = new Buffer(stat.size);
-var fd = fs.openSync( filename, 'r' );
+let buffer = new Buffer(stat.size);
+let fd = fs.openSync( filename, 'r' );
 fs.readSync( fd, buffer, 0, stat.size, 0 );
 
-var fonts = "";
+let fonts = "";
+fonts = fonts + `@font-face { font-family: esint10; src: url('./esint10.ttf'); }\n`;
 fs.readdirSync('./bakoma/ttf').forEach(file => {
-  name = file.replace(/.ttf/, '');
+  let name = file.replace(/.ttf/, '');
   fonts = fonts + `@font-face { font-family: ${name}; src: url('bakoma/ttf/${file}'); }\n`;
 });
 fs.writeFileSync("fonts.css", fonts);
 
-var html = "";
+let html = "";
 html = html + "<html>\n";
 html = html + "<head>\n";
 html = html + '<link rel="stylesheet" type="text/css" href="fonts.css">\n';
@@ -28,8 +30,7 @@ html = html + "</head>\n";
 html = html + '<body>\n';
 html = html + '<div style="position: absolute;">\n';
 
-var parser = require('./src/parser');
-html = html + parser.dvi2html( buffer );
+html = html + dvi2html( buffer );
 
 html = html + '</div>\n';
 html = html + '</body>\n';
