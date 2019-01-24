@@ -1,6 +1,6 @@
 # DVI Parser
 
-Converted from https://github.com/FabriceSalvaire/PyDVI
+Built using https://github.com/FabriceSalvaire/PyDVI and the work of @tmanderson
 
 The goal with this project is to eventually have a complete [DVI](https://en.wikipedia.org/wiki/Device_independent_file_format) toolset
 written in node. Once complete, this will hopefully be used to implement
@@ -12,7 +12,8 @@ a [DVI Specification Explained](https://github.com/tmanderson/dvi-parser/wiki/DV
 put together for my own benefit (sourced from a few different online pages).
 
 ### TODO
+
 - [x] DVI Parser
-- [ ] TFM Parser
-- [ ] Metric management (right now, fonts are assumed to be in mactex's default location)
-- [ ] HTML/CSS/JS conversion
+- [X] TFM Parser
+- [X] Metric management (right now, fonts are found using `kpsewhich`)
+- [X] HTML/CSS/JS conversion
