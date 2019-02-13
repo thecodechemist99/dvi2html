@@ -38,7 +38,17 @@ code as index on the :class:`Tfm` class instance.  For example to get the metric
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////;
 
-class TfmChar {
+export class TfmChar {
+  tfm : Tfm;
+  char_code : number;
+  width : number;
+  height : number;
+  depth : number;
+  italic_correction : number;
+  lig_kern_program_index : number;
+  next_larger_char : number;
+
+  
   constructor(
     tfm,
     char_code,
@@ -105,7 +115,12 @@ class TfmChar {
 }
 
 /*  This class encapsulates a TeX Font Metric for an extensible Glyph. */
-class TfmExtensibleChar extends TfmChar {
+export class TfmExtensibleChar extends TfmChar {
+  top : number;
+  mid : number;
+  bot : number;
+  rep : number;
+  
   constructor(
     tfm,
     char_code,
@@ -131,7 +146,12 @@ class TfmExtensibleChar extends TfmChar {
   }
 }
 
-class TfmLigKern {
+export class TfmLigKern {
+  tfm : Tfm;
+  stop : number;
+  index : number;
+  next_char: TfmChar;
+  
   constructor(tfm, index, stop, next_char) {
     this.tfm = tfm;
     this.stop = stop;
@@ -143,15 +163,22 @@ class TfmLigKern {
 
 
 /*  This class represents a Kerning Program Instruction. */
-class TfmKern extends TfmLigKern {
-    constructor(tfm, index, stop, next_char, kern) {
-      super(tfm, index, stop, next_char);
-      this.kern = kern;
-    }
+export class TfmKern extends TfmLigKern {
+  kern: number;
+  
+  constructor(tfm, index, stop, next_char, kern) {
+    super(tfm, index, stop, next_char);
+    this.kern = kern;
+  }
 }
 
 /*  This class represents a Ligature Program Instruction. */
-class TfmLigature extends TfmLigKern {
+export class TfmLigature extends TfmLigKern {
+  ligature_char_code: number;
+  number_of_chars_to_pass_over: number;
+  current_char_is_deleted: boolean;
+  next_char_is_deleted: boolean;
+  
     constructor(tfm,
                  index,
                  stop,
@@ -170,9 +197,43 @@ class TfmLigature extends TfmLigKern {
 }
 
 /*  This class encapsulates a TeX Font Metric for a font. */
-class Tfm {
-  constructor(   font_name,
-                 filename,
+export class Tfm {
+  smallest_character_code : number;
+  largest_character_code : number;
+  checksum : number;
+  design_font_size : number;
+  character_coding_scheme : string;
+  family : string;
+
+  slant: number;
+  spacing: number;
+  space_stretch: number;
+  space_shrink: number;
+  x_height: number;
+  quad: number;
+  extra_space: number;
+  num1: number;
+  num2: number;
+  num3: number;
+  denom1: number;
+  denom2: number;
+  sup1: number;
+  sup2: number;
+  sup3: number;
+  sub1: number;
+  sub2: number;
+  supdrop: number;
+  subdrop: number;
+  delim1: number;
+  delim2: number;
+  axis_height: number;
+  default_rule_thickness: number;
+  big_op_spacing: number;
+
+  _lig_kerns: TfmLigKern[];
+  _chars: any;
+  
+  constructor(  
                  smallest_character_code,
                  largest_character_code,
                  checksum,
@@ -180,8 +241,6 @@ class Tfm {
                  character_coding_scheme,
                  family) {
 
-    this.font_name = font_name;
-    this.filename = filename;
     this.smallest_character_code = smallest_character_code;
     this.largest_character_code = largest_character_code;
     this.checksum = checksum;
@@ -247,8 +306,3 @@ class Tfm {
   }
 }
 
-module.exports.TfmKern = TfmKern;
-module.exports.TfmLigature = TfmLigature;
-module.exports.TfmExtensibleChar = TfmExtensibleChar;
-module.exports.TfmChar = TfmChar;
-module.exports.Tfm = Tfm;

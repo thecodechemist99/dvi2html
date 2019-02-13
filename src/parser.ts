@@ -1,12 +1,8 @@
 import * as fs from "fs";
 import { execSync } from "child_process";
-import * as TFMParser from "./tfm/parser";
+import * as TFMParser from "./tfm";
 
-function loadFont(name) {
-  var path = execSync('kpsewhich ' + name + '.tfm').toString().split("\n")[0];
-  var tfm = TFMParser.parse(name, path);
-  return tfm;
-}
+//  var path = execSync('kpsewhich ' + name + '.tfm').toString().split("\n")[0];
 
 enum Opcode {
   set_char = 0,
@@ -71,9 +67,12 @@ enum Opcode {
   post_post = 249
 }
 
-class DviCommand {
-  length: number;  
+export class DviCommand {
+  length: number;
+  special: boolean;
+  
   constructor(properties) {
+    this.special = false;
     Object.assign(this, properties);
   }
 }
@@ -90,6 +89,13 @@ class SetChar extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.set_char;
+  }
+}
+
+class SetText extends DviCommand {
+  t: string;
+  constructor(properties) {
+    super(properties);
   }
 }
 
@@ -303,9 +309,10 @@ class Font extends DviCommand {
 class Special extends DviCommand {
   opcode: Opcode.xxx;
   x: string;
-    constructor(properties) {
+  constructor(properties) {
     super(properties);
     this.opcode = Opcode.xxx;
+    this.special = true;
   }  
 }
 
@@ -642,4 +649,33 @@ export async function* dviParser(stream) {
   }
 }
 
+export async function* merge(commands, filter, merge) {
+  let queue = [];
+  console.log("merge");
 
+  for await (const command of commands) {
+    if (filter(command)) {
+      queue.push( command );
+    } else {
+      if (queue.length > 0) {
+	yield merge(queue);
+	queue = [];
+      }
+
+      yield command;
+    }
+  }
+
+  if (queue.length > 0) yield merge(queue);
+}
+
+export function combineSetChar(commands) {
+  return merge( commands,
+	 command => (command.opcode === Opcode.set_char),
+	 function(queue) {
+	   let text = queue
+	     .map( command => String.fromCharCode(command.c) )
+	     .join();
+	   return new SetText({t:text});
+	 });
+}

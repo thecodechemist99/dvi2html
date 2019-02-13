@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import { execSync } from "child_process";
-import { dviParser } from "./src/parser";
+import { dviParser, combineSetChar } from "./src/parser";
+import color from "./src/specials/color";
+import svg from "./src/specials/svg";
 
 let fonts = "";
 fonts = fonts + `@font-face { font-family: esint10; src: url('./esint10.ttf'); }\n`;
@@ -28,7 +30,7 @@ html = html + '<div style="position: absolute;">\n';
 
 //html = html + dviParser( buffer );
 
-let parser = dviParser(stream);
+let parser = svg(color(combineSetChar(dviParser(stream))));
 
 async function main() {
     for await (const chunk of parser) {
@@ -36,6 +38,7 @@ async function main() {
     }
 }
 main()
+
 
 // emits each line as a buffer or as a string representing an array of fields
 //parser.on('data', function (line) {

@@ -1,6 +1,6 @@
 // PyDvi - A Python Library to Process DVI Stream
 // Copyright (C) 2014 Fabrice Salvaire
-//;
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -15,9 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /////////////////////////////////////////////////////////////////////////////
 
-
-var fs = require('fs');
-var Tfm = require('./tfm');
+import * as Tfm from "./tfm";
 
 const NO_TAG = 0;
 const LIG_TAG = 1;
@@ -49,11 +47,20 @@ function word_ptr(base, index) {
 }
 
 class TFMParser {
-  constructor(font_name, filename) {
-    this.font_name = font_name;
-    this.filename = filename;
+  position : number;
+  stream : Buffer;
+  length : number;
+  table_lengths : number[];
+  table_pointers : number[];
+  entire_file_length : number;
+  smallest_character_code : number;
+  largest_character_code : number;  
+  number_of_chars : number;  
+  tfm : Tfm.Tfm;
+  
+  constructor(buffer) {
     this.position = 0;
-    this.stream = fs.readFileSync(filename);
+    this.stream = buffer;
     
     this.read_lengths();
     this.read_header();
@@ -66,7 +73,7 @@ class TFMParser {
     this.position = position;
   }
 
-  read_unsigned_byte1(p) {
+  read_unsigned_byte1(p?) {
     if (p) this.position = p;
     var result = this.stream.readUInt8(this.position);
     this.position = this.position + 1;
@@ -74,14 +81,14 @@ class TFMParser {
   }
 
   
-  read_unsigned_byte2(p) {
+  read_unsigned_byte2(p?) {
     if (p) this.position = p;
     var result = this.stream.readUInt16BE(this.position);
     this.position = this.position + 2;
     return result;
   }
 
-  read_unsigned_byte4(p) {
+  read_unsigned_byte4(p?) {
     if (p) this.position = p;
     var result = this.stream.readUInt32BE(this.position);
     this.position = this.position + 4;
@@ -111,7 +118,7 @@ class TFMParser {
   }
   
   // BADBAD
-  read_fix_word(p) {
+  read_fix_word(p?) {
     if (p) this.position = p;
     var result = this.stream.readUInt32BE(this.position);
     this.position = this.position + 4;
@@ -123,7 +130,7 @@ class TFMParser {
   }
 
   // BADBAD
-  read_bcpl(position) {
+  read_bcpl(position?) {
     if (position) this.position = position;
     var length = this.read_unsigned_byte1();
     var result = this.stream.slice( this.position, this.position + length ).toString('ascii');
@@ -131,7 +138,7 @@ class TFMParser {
     return result;
   }
   
-  seek_to_table(table, position) {
+  seek_to_table(table, position?) {
     if (position)
       this.seek( this.position_in_table( table, position ) );
     else
@@ -318,8 +325,7 @@ class TFMParser {
     // Fixme: complete
     // don't read header [18 ... whatever]
 
-    this.tfm = new Tfm.Tfm(this.font_name,
-                   this.filename,
+    this.tfm = new Tfm.Tfm(
                    this.smallest_character_code,
                    this.largest_character_code,
                    checksum,
@@ -366,7 +372,7 @@ class TFMParser {
 
     if (this.tfm.character_coding_scheme == 'TeX math symbols') {
       // Read the additional 15 fix word parameters
-      this.tfm.set_math_font_parameters( [...Array(15).keys()].map( function() { return stream.read_fix_word(); } ) );
+      this.tfm.set_math_symbols_parameters( [...Array(15).keys()].map( function() { return stream.read_fix_word(); } ) );
     }
     
     if ((this.tfm.character_coding_scheme == 'TeX math extension') ||
@@ -440,7 +446,7 @@ class TFMParser {
      remainder =  this.read_unsigned_byte1();
                                                             
     if (last_skip_byte == 255) {
-      left_boundary_char_program_index = 256*op_byte + remainder;
+      let left_boundary_char_program_index = 256*op_byte + remainder;
       throw Error('Font has left boundary char program');
     }
 
@@ -605,7 +611,7 @@ class TFMParser {
   read_char_info(c) {
     /*** Read the character code *c* data in the character information table.
      ***/        
-    var index = c - this.smallest_character_code
+    var index = c - this.smallest_character_code;
     var bytes = [];
     this.seek_to_table( tables.character_info, index);
     bytes[0] = this.read_unsigned_byte1();
@@ -624,7 +630,7 @@ class TFMParser {
   }
 }
 
-module.exports.parse = function(font_name, filename) {
-  var p = new TFMParser(font_name, filename);
+export function parse(buffer) {
+  var p = new TFMParser(buffer);
   return p.tfm;
-};
+}
