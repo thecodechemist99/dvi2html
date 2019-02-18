@@ -4,14 +4,12 @@
   "description": "Convert DVI to HTML5/CSS",
   "main": "index.js",
   "scripts": {
-    "build" : "tsc"
+    "build": "tsc"
   },
   "author": "Jim Fowler",
   "license": "GPL-3.0",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@types/es6-promise": "^3.3.0",
     "typescript": "^3.2.4",
     "@types/node": "^10.12.18"
   }
