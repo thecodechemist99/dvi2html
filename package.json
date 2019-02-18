@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@types/es6-promise": "^3.3.0",
-    "typescript": "^3.2.4"
+    "typescript": "^3.2.4",
     "@types/node": "^10.12.18",
   }
 }
