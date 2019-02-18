@@ -17,4 +17,10 @@ export var specials = {
   papersize: papersize
 };
 
+export async function dvi2html( dviStream, htmlStream ) {
+  let parser = papersize(svg(color(mergeText(dviParser(dviStream)))));
 
+  let machine = new HTMLMachine( htmlStream );
+
+  await execute( parser, machine );
+}

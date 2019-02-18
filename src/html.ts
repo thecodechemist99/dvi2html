@@ -4,9 +4,12 @@ import { Writable } from 'stream';
 export default class HTMLMachine extends Machine {
   output : Writable;
   pointsPerDviUnit : number;
+
   svgDepth : number;
   color : string;
 
+  
+  
   constructor( o : Writable ) {
     super();
     this.output = o;

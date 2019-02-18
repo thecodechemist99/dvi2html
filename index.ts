@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import { execSync } from "child_process";
-
-import { specials, Machines, dviParser, execute, mergeText } from "./src";
+import { dvi2html } from "./src";
 import { Writable } from 'stream';
 
 let fonts = "";
@@ -31,27 +30,13 @@ html = html + '<div style="position: absolute;">\n';
 
 const myWritable = new Writable({
   write(chunk, encoding, callback) {
-    //process.stdout.write(chunk);
     html = html + chunk;
     callback();
   }
 });
 
-let papersize = specials.papersize;
-let svg = specials.svg;
-let color = specials.color;
-
-let parser = papersize(svg(color(mergeText(dviParser(stream)))));
-
-let machine = new Machines.HTML(myWritable);
-
 async function main() {
-
-  async function run() {
-    await execute( parser, machine );
-  }
-
-  await run()
+  await dvi2html( stream, myWritable );
   
   html = html + '</div>\n';
   html = html + '</body>\n';
