@@ -4,7 +4,7 @@
   "description": "Convert DVI to HTML5/CSS",
   "main": "index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "node tools/tfm2json.js && tsc"
   },
   "author": "Jim Fowler",
   "license": "GPL-3.0",
