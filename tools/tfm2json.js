@@ -1,6 +1,6 @@
 var path = require('path');
 var fs = require('fs');
-var outputPath = path.join(__dirname,'../src/tfm.json');
+var outputPath = path.join(__dirname,'../src/tfm/fonts.json');
 var execSync = require('child_process').execSync;
 
 var fonts = {};
