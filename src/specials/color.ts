@@ -6,6 +6,10 @@ class PushColor extends DviCommand {
   constructor(color) {
     super({});
     this.color = color;
+  }
+
+  toString() : string {
+    return `PushColor { color: '${this.color}' }`;
   }  
 }
 
@@ -14,6 +18,9 @@ class PopColor extends DviCommand {
     super({});
   }  
 
+  toString() : string {
+    return `PopColor { }`;
+  }  
 }
 
 function intToHex(n) {

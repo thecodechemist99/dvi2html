@@ -16,6 +16,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 import * as Tfm from "./tfm";
+import * as fontdata from "./fonts.json";
 
 const NO_TAG = 0;
 const LIG_TAG = 1;
@@ -98,7 +99,7 @@ class TFMParser {
   read_four_byte_numbers_in_table(table, index) {
         /*** Return the four numbers in table *table* at index *index*. 
          ***/
-    this.seek_to_table(this.position_in_table(table, index));
+    this.seek(this.position_in_table(table, index));
     return [ this.read_unsigned_byte1(),
              this.read_unsigned_byte1(),
              this.read_unsigned_byte1(),
@@ -134,7 +135,7 @@ class TFMParser {
     if (position) this.position = position;
     var length = this.read_unsigned_byte1();
     var result = this.stream.slice( this.position, this.position + length ).toString('ascii');
-    this.position += this.length;
+    this.position += length;
     return result;
   }
   
@@ -296,7 +297,7 @@ class TFMParser {
 
     // Read header[0 ... 1]
     var checksum = this.read_unsigned_byte4();
-    var design_font_size = this.read_fix_word();
+    var designSize = this.read_fix_word();
         
     // Read header[2 ... 11] if there
     var character_info_table_position = this.table_pointers[tables.character_info];
@@ -329,7 +330,7 @@ class TFMParser {
                    this.smallest_character_code,
                    this.largest_character_code,
                    checksum,
-                   design_font_size,
+                   designSize,
                    character_coding_scheme,
                    family);
 
@@ -630,7 +631,16 @@ class TFMParser {
   }
 }
 
-export function parse(buffer) {
+function parse(buffer) {
   var p = new TFMParser(buffer);
   return p.tfm;
+}
+
+export function loadFont(fontname) {
+  if (fontdata[fontname]) {
+    let buffer = Buffer.from(fontdata[fontname], 'base64');
+    return parse(buffer);
+  }
+
+  throw Error(`Could not find font ${fontname}`);
 }

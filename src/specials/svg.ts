@@ -27,11 +27,11 @@ async function* specialsToSVG(commands) {
 export default function (commands) {
   return merge( specialsToSVG(commands),
 		command => command.svg,
-		function(commands) {
+		function*(commands) {
 		  let svg = commands
 		    .map( command => command.svg )
 		    .join()
                     .replace(/{\?nl}/g, "\n");
-		  return new SVG( svg );
+		  yield new SVG( svg );
 		});
 }

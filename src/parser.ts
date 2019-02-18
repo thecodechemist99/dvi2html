@@ -1,8 +1,4 @@
-import * as fs from "fs";
-import { execSync } from "child_process";
-import * as TFMParser from "./tfm";
-
-//  var path = execSync('kpsewhich ' + name + '.tfm').toString().split("\n")[0];
+import { Machine } from "./machine";
 
 enum Opcode {
   set_char = 0,
@@ -75,39 +71,11 @@ export class DviCommand {
     this.special = false;
     Object.assign(this, properties);
   }
-}
+  
+  execute(machine : Machine) { }
 
-// 0...127	set_char_i		typeset a character and move right
-// 128	set1	c[1]	                typeset a character and move right
-// 129	set2	c[2]
-// 130	set3	c[3]
-// 131	set4	c[4]
-
-class SetChar extends DviCommand {
-  opcode: Opcode.set_char;
-  c: number;
-  constructor(properties) {
-    super(properties);
-    this.opcode = Opcode.set_char;
-  }
-}
-
-class SetText extends DviCommand {
-  t: string;
-  constructor(properties) {
-    super(properties);
-  }
-}
-
-// 132	set_rule	a[4], b[4]	typeset a rule and move right
-
-class SetRule extends DviCommand {
-  opcode: Opcode.set_rule;
-  a: number;
-  b: number;
-  constructor(properties) {
-    super(properties);
-    this.opcode = Opcode.set_rule;
+  toString() : string {
+    return "DviCommand { }";
   }
 }
 
@@ -123,18 +91,103 @@ class PutChar extends DviCommand {
     super(properties);
     this.opcode = Opcode.put_char;
   }
+
+  execute(machine : Machine) {
+    machine.putText( Buffer.from([this.c]) );
+  }
+
+  toString() : string {
+    return `PutChar { c: '${String.fromCharCode(this.c)}' }`;
+  }  
+}
+
+// 0...127	set_char_i		typeset a character and move right
+// 128	set1	c[1]	                typeset a character and move right
+// 129	set2	c[2]
+// 130	set3	c[3]
+// 131	set4	c[4]
+
+class SetChar extends DviCommand {
+  opcode: Opcode.set_char;
+
+  c: number;
+  
+  constructor(properties) {
+    super(properties);
+    this.opcode = Opcode.set_char;
+  }
+
+  execute(machine : Machine) {
+    var text = Buffer.from([this.c]);
+    var width = machine.putText( text );
+    machine.moveRight( width );
+  }
+
+  toString() : string {
+    return `SetChar { c: '${String.fromCharCode(this.c)}' }`;
+  }    
+}
+
+class SetText extends DviCommand {
+  t: Buffer;
+  
+  constructor(properties) {
+    super(properties);
+  }
+
+  execute(machine : Machine) {
+    var width = machine.putText( this.t );
+    machine.moveRight( width );
+  }
+
+  toString() {
+    return `SetText { t: "${this.t.toString()}" }`;
+  }
 }
 
 // 137	put_rule	a[4], b[4]	typeset a rule
 
 class PutRule extends DviCommand {
   opcode: Opcode.put_rule;
+  
   a: number;
   b: number;
+
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.put_rule;
   }
+
+  execute(machine : Machine) {
+    machine.putRule( this );
+  }
+
+  toString() : string {
+    return `PutRule { a: ${this.a}, b: ${this.b} }`;
+  }  
+}
+
+// 132	set_rule	a[4], b[4]	typeset a rule and move right
+
+class SetRule extends DviCommand {
+  opcode: Opcode.set_rule;
+  
+  a: number;
+  b: number;
+  
+  constructor(properties) {
+    super(properties);
+    this.opcode = Opcode.set_rule;
+  }
+
+  execute(machine : Machine) {
+    machine.putRule( this );
+    machine.moveRight( this.b );
+  }
+
+  toString() : string {
+    return `SetRule { a: ${this.a}, b: ${this.b} }`;
+  }    
 }
 
 // 138	nop		no operation
@@ -144,7 +197,11 @@ class Nop extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.nop;
-  }  
+  }
+
+  toString() : string {
+    return `Nop { }`;
+  }      
 }
 
 // 139	bop	c_0[4]..c_9[4], p[4]	beginning of page
@@ -165,17 +222,37 @@ class Bop extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.bop;
-  }  
+  }
+
+  execute(machine : Machine) {
+    machine.beginPage(this);
+  }    
+
+  toString() : string {
+    return `Bop { ... }`;
+  }        
 }
 
 // 140	eop		ending of page
 
 class Eop extends DviCommand {
   opcode: Opcode.eop;
+  
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.eop;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (machine.stack.length)
+      throw Error('Stack should be empty at the end of a page.');
+
+    machine.endPage();
+  }
+  
+  toString() : string {
+    return `Eop { }`;
+  }            
 }
 
 // 141	push		save the current positions
@@ -185,7 +262,15 @@ class Push extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.push;
-  }  
+  }
+
+  execute(machine : Machine) {
+    machine.push();
+  }
+
+  toString() : string {
+    return `Push { }`;
+  }        
 }
 
 // 142	pop		restore previous positions
@@ -195,7 +280,15 @@ class Pop extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.pop;
-  }  
+  }
+
+  execute(machine : Machine) {
+    machine.pop();
+  }
+
+  toString() : string {
+    return `Pop { }`;
+  }          
 }
 
 // 143	right1	b[1]	move right
@@ -209,7 +302,15 @@ class MoveRight extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.right;
-  }  
+  }
+  
+  execute(machine : Machine) {
+    machine.moveRight(this.b);
+  }
+
+  toString() : string {
+    return `MoveRight { b: ${this.b} }`;
+  }            
 }
 
 // 147	w0		move right by w
@@ -224,7 +325,19 @@ class MoveW extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.w;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (this.length > 1) machine.position.w = this.b;
+    machine.moveRight(machine.position.w);    
+  }    
+
+  toString() : string {
+    if (this.length > 1)
+      return `MoveW { b: ${this.b} }`;
+    else
+      return `MoveW0 { }`;      
+  }              
 }
 
 // 152	x0		move right by x
@@ -239,7 +352,19 @@ class MoveX extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.x;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (this.length > 1) machine.position.x = this.b;
+    machine.moveRight(machine.position.x);    
+  }
+
+  toString() : string {
+    if (this.length > 1)
+      return `MoveX { b: ${this.b} }`;
+    else
+      return `MoveX0 { }`;      
+  }                
 }
 
 // 157	down1	a[1]	move down
@@ -253,7 +378,15 @@ class MoveDown extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.down;
-  }  
+  }
+
+  execute(machine : Machine) {
+    machine.moveDown(this.a);
+  }
+
+  toString() : string {
+    return `MoveDown { a: ${this.a} }`;
+  }                  
 }
 
 // 161	y0		move down by y
@@ -268,7 +401,19 @@ class MoveY extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.y;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (this.length > 1) machine.position.y = this.a;
+    machine.moveDown(machine.position.y);
+  }
+
+  toString() : string {
+    if (this.length > 1)
+      return `MoveY { a: ${this.a} }`;
+    else
+      return `MoveY0 { }`;      
+  }                  
 }
 
 // 166	z0		move down by z
@@ -280,10 +425,23 @@ class MoveY extends DviCommand {
 class MoveZ extends DviCommand {
   opcode: Opcode.z;
   a: number;
-    constructor(properties) {
+  
+  constructor(properties) {
     super(properties);
     this.opcode = Opcode.z;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (this.length > 1) machine.position.z = this.a;
+    machine.moveDown(machine.position.z);
+  }
+
+  toString() : string {
+    if (this.length > 1)
+      return `MoveZ { a: ${this.a} }`;
+    else
+      return `MoveZ0 { }`;      
+  }                    
 }
 
 // 171...234	fnt_num_i		set current font to i
@@ -292,13 +450,24 @@ class MoveZ extends DviCommand {
 // 237	fnt3	k[3]
 // 238	fnt4	k[4]
 
-class Font extends DviCommand {
+class SetFont extends DviCommand {
   opcode: Opcode.fnt;
   k: number;
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.fnt;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (machine.fonts[this.k]) {
+      machine.setFont(machine.fonts[this.k]);
+    } else
+      throw `Could not find font ${this.k}.`;
+  }    
+
+  toString() : string {
+    return `SetFont { k: ${this.k} }`;
+  }                      
 }
 
 // 239	xxx1	k[1], x[k]	extension to DVI primitives
@@ -308,12 +477,18 @@ class Font extends DviCommand {
 
 class Special extends DviCommand {
   opcode: Opcode.xxx;
+
   x: string;
+  
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.xxx;
     this.special = true;
-  }  
+  }
+
+  toString() : string {
+    return `Special { x: '${this.x}' }`;
+  }                        
 }
 
 
@@ -328,17 +503,31 @@ class Special extends DviCommand {
 
 class FontDefinition extends DviCommand {
   opcode: Opcode.fnt_def;
-  k: number;
-  c: number;
-  s: number;
-  d: number;
-  a: number;
-  l: number;
-  n: string;
-    constructor(properties) {
+  k: number; // font id
+  c: number; // checksum
+  s: number; // fixed-point scale factor (applied to char widths of font)
+  d: number; // design-size factors with the magnification (`s/1000`)
+  a: number; // length of directory path of font (`./` if a = 0)
+  l: number; // length of font name
+  n: string; // font name (first `a` bytes is dir, remaining `l` = name)
+
+  constructor(properties) {
     super(properties);
     this.opcode = Opcode.fnt_def;
-  }  
+  }
+  
+  execute(machine : Machine) {
+    machine.fonts[this.k] = machine.loadFont({
+      name: this.n,
+      checksum: this.c,
+      scaleFactor: this.s,
+      designSize: this.d
+    });
+  }
+
+  toString() : string {
+    return `FontDefinition { k: ${this.k}, n: '${this.n}', ... }`;
+  }                          
 }
 
 // 247	pre	i[1], num[4], den[4], mag[4],  k[1], x[k]	preamble
@@ -353,7 +542,25 @@ class Preamble extends DviCommand {
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.pre;
-  }  
+  }
+
+  execute(machine : Machine) {
+    if (this.num <= 0)
+      throw Error('Invalid numerator (must be > 0)');
+    
+    if (this.den <= 0)
+      throw Error('Invalid denominator (must be > 0)');
+
+    if (this.i != 2) {
+      throw Error('DVI format must be 2.');
+    }
+    
+    machine.preamble( this.num, this.den, this.mag, this.x );
+  }    
+
+  toString() : string {
+    return `Preamble { i: ${this.i}, num: ${this.num}, den: ${this.den}, mag: ${this.mag}, x: '${this.x}' }`;
+  }                            
 }
 
 // 248	post	p[4], num[4], den[4], mag[4], l[4], u[4], s[2], t[2]
@@ -361,20 +568,50 @@ class Preamble extends DviCommand {
 
 class Post extends DviCommand {
   opcode: Opcode.post;
-    constructor(properties) {
+
+  p : number;
+  num : number;
+  den : number;
+  mag : number;
+  l : number;
+  u : number;
+  s : number;
+  t : number;
+  
+  constructor(properties) {
     super(properties);
     this.opcode = Opcode.post;
-  }  
+  }
+  
+  execute(machine : Machine) {
+    machine.post( this );
+  }    
+
+  toString() : string {
+    return `Post { p: ${this.p}, num: ${this.num}, den: ${this.den}, mag: ${this.mag}, ... }`;
+  }                              
 }
 
 // 249	post_post	q[4], i[1]; 223's	postamble ending
 
 class PostPost extends DviCommand {
   opcode: Opcode.post_post;
+
+  q : number;
+  i : number;
+  
   constructor(properties) {
     super(properties);
     this.opcode = Opcode.post_post;
-  }  
+  }
+
+  execute(machine : Machine) {
+    machine.postPost( this );    
+  }    
+
+  toString() : string {
+    return `PostPost { q: ${this.q}, i: ${this.i} }`;
+  }                              
 }
 
 // 250...255	undefined	
@@ -383,7 +620,7 @@ class PostPost extends DviCommand {
 
 type Command =
   SetChar | SetRule | PutChar | PutRule | Nop | Bop | Eop | Push | Pop |
-  MoveRight | MoveW | MoveX | MoveDown | MoveY | MoveZ | Font | Special |
+  MoveRight | MoveW | MoveX | MoveDown | MoveY | MoveZ | SetFont | Special |
   FontDefinition | Preamble | Post | PostPost;
 
 function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
@@ -393,11 +630,11 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
   }
 
   if ((opcode >= Opcode.fnt) && (opcode < Opcode.fnt1))
-    return new Font({ k : opcode - 171, length: 1 });
+    return new SetFont({ k : opcode - 171, length: 1 });
 
   // Technically these are undefined opcodes, but we'll pretend they are NOPs
   if ((opcode >= 250) && (opcode <= 255)) {
-    throw 'Undefined opcode';
+    throw Error(`Undefined opcode ${opcode}`);
     return new Nop({ length: 1 });
   }
   
@@ -408,15 +645,15 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     case Opcode.set4:
       if (buffer.length < opcode - Opcode.set1 + 1) return undefined;
       return new SetChar({
-	c : buffer.readIntBE(0, opcode - Opcode.set1 + 1),
+	c : buffer.readUIntBE(0, opcode - Opcode.set1 + 1),
 	length : opcode - Opcode.set1 + 1 + 1
       });
 
     case Opcode.set_rule:
       if (buffer.length < 8) return undefined;
       return new SetRule({
-	a: buffer.readIntBE(0,4),
-	b: buffer.readIntBE(4,4),
+	a: buffer.readInt32BE(0),
+	b: buffer.readInt32BE(4),
 	length: 9
       });
       
@@ -433,8 +670,8 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     case Opcode.put_rule:
       if (buffer.length < 8) return undefined;      
       return new PutRule({
-	a: buffer.readIntBE(0,4),
-	b: buffer.readIntBE(4,4),
+	a: buffer.readInt32BE(0),
+	b: buffer.readInt32BE(4),
 	length: 9
       });
       
@@ -444,17 +681,17 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     case Opcode.bop:
       if (buffer.length < 44) return undefined;
       return new Bop({
-	c_0 : buffer.readIntBE(0, 4),
-	c_1 : buffer.readIntBE(4, 4),
-	c_2 : buffer.readIntBE(8, 4),
-	c_3 : buffer.readIntBE(12, 4),
-	c_4 : buffer.readIntBE(16, 4),
-	c_5 : buffer.readIntBE(20, 4),
-	c_6 : buffer.readIntBE(24, 4),
-	c_7 : buffer.readIntBE(28, 4),
-	c_8 : buffer.readIntBE(32, 4),
-	c_9 : buffer.readIntBE(36, 4),
-	p   : buffer.readIntBE(40, 4),
+	c_0 : buffer.readUInt32BE(0),
+	c_1 : buffer.readUInt32BE(4),
+	c_2 : buffer.readUInt32BE(8),
+	c_3 : buffer.readUInt32BE(12),
+	c_4 : buffer.readUInt32BE(16),
+	c_5 : buffer.readUInt32BE(20),
+	c_6 : buffer.readUInt32BE(24),
+	c_7 : buffer.readUInt32BE(28),
+	c_8 : buffer.readUInt32BE(32),
+	c_9 : buffer.readUInt32BE(36),
+	p   : buffer.readUInt32BE(40),
 	length : 45
       });
 
@@ -544,7 +781,7 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     case Opcode.fnt3:
     case Opcode.fnt4:
       if (buffer.length < opcode - Opcode.fnt1 + 1) return undefined;
-      return new Font({
+      return new SetFont({
 	k : buffer.readIntBE(0, opcode - Opcode.fnt1 + 1),
 	length : opcode - Opcode.fnt1 + 1 + 1
       });
@@ -555,7 +792,7 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     case Opcode.xxx4: {
       let i = opcode - Opcode.xxx + 1;
       if (buffer.length < i) return undefined;      
-      let k = buffer.readIntBE(0, i);
+      let k = buffer.readUIntBE(0, i);
       if (buffer.length < i + k) return undefined;
       return new Special({
 	x: buffer.slice(i, i+k).toString(),
@@ -571,9 +808,9 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
       if (buffer.length < i) return undefined;
       let k = buffer.readIntBE(0, i);
       if (buffer.length < i + 14) return undefined;
-      let c = buffer.readIntBE(i+0, 4);
-      let s = buffer.readIntBE(i+4, 4);
-      let d = buffer.readIntBE(i+8, 4);
+      let c = buffer.readUInt32BE(i+0);
+      let s = buffer.readUInt32BE(i+4);
+      let d = buffer.readUInt32BE(i+8);
       let a = buffer.readUInt8(i+12);
       let l = buffer.readUInt8(i+13);
       if (buffer.length < i+14+a+l) return undefined;
@@ -593,12 +830,12 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     case Opcode.pre: {
       if (buffer.length < 14) return undefined;
       let i = buffer.readUInt8(0);
-      let num = buffer.readIntBE(1, 4);
-      let den = buffer.readIntBE(5, 4);
-      let mag = buffer.readIntBE(9, 4);
+      let num = buffer.readUInt32BE(1);
+      let den = buffer.readUInt32BE(5);
+      let mag = buffer.readUInt32BE(9);
       let k = buffer.readUInt8(13);
       if (buffer.length < 14 + k) return undefined;
-      console.log( "preamble: ",buffer.slice(14,14+k).toString());
+
       return new Preamble({
 	i: i,
 	num: num,
@@ -610,37 +847,59 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
     }
 
     case Opcode.post:
-      return new Post({ length: 1 });
+      if (buffer.length < 4+4+4+4+4+4+2+2) return undefined;
+      return new Post({
+	p: buffer.readUInt32BE(0),
+	num: buffer.readUInt32BE(4),
+	den: buffer.readUInt32BE(8),
+	mag: buffer.readUInt32BE(12),
+	l: buffer.readUInt32BE(16),
+	u: buffer.readUInt32BE(20),
+	s: buffer.readUInt16BE(24),
+	t: buffer.readUInt16BE(26),
+	length: 29
+      });
 
     case Opcode.post_post:
-      return new PostPost({ length: 1 });
+      if (buffer.length < 5) return undefined;
+      return new PostPost({
+	q: buffer.readUInt32BE(0),
+	i: buffer.readUInt8(4),
+	length: 6
+      });
   }
 
   return undefined;
 }
 
 export async function* dviParser(stream) {
-  let f;
-  let stack = [];
-  let pos = { h: 0, v: 0, w: 0, x: 0, y: 0, z: 0 };
-  let metadata = { num: 0, den: 0, mag: 0, s: 0 };
-  let fonts = [];
-  let pictureDepth = 0;
-
   let buffer = Buffer.alloc(0);
-  
+  let isAfterPostamble = false;
+    
   for await (const chunk of stream) {
     buffer = Buffer.concat([buffer, chunk]);
     let offset = 0;
     
     while(offset < buffer.length) {
       let opcode : Opcode = buffer.readUInt8(offset);
-      
+
+      if (isAfterPostamble) {
+	if (opcode == 223) {
+	  offset++;
+	  continue;
+	} else {
+	  throw Error('Only 223 bytes are permitted after the post-postamble.');
+	}
+      }
+
       let command = parseCommand( opcode, buffer.slice(offset+1) );
 
       if (command) {
 	yield command;
 	offset += command.length;
+
+	if (command.opcode == Opcode.post_post)
+	  isAfterPostamble = true;
       } else
 	break;
     }
@@ -649,16 +908,22 @@ export async function* dviParser(stream) {
   }
 }
 
+export async function execute(commands, machine) {
+  for await (const command of commands) {
+    console.log(command.toString());
+    command.execute(machine);
+  }
+}
+
 export async function* merge(commands, filter, merge) {
   let queue = [];
-  console.log("merge");
 
   for await (const command of commands) {
     if (filter(command)) {
       queue.push( command );
     } else {
       if (queue.length > 0) {
-	yield merge(queue);
+	yield* merge(queue);
 	queue = [];
       }
 
@@ -666,16 +931,14 @@ export async function* merge(commands, filter, merge) {
     }
   }
 
-  if (queue.length > 0) yield merge(queue);
+  if (queue.length > 0) yield* merge(queue);
 }
 
-export function combineSetChar(commands) {
+export function mergeText(commands) {
   return merge( commands,
-	 command => (command.opcode === Opcode.set_char),
-	 function(queue) {
-	   let text = queue
-	     .map( command => String.fromCharCode(command.c) )
-	     .join();
-	   return new SetText({t:text});
-	 });
+		command => (command instanceof SetChar),
+		function*(queue) {
+		  let text = Buffer.from( queue.map( command => command.c ) );
+		  yield new SetText({t:text});
+		});
 }

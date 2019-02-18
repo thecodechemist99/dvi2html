@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import { execSync } from "child_process";
-import { dviParser, combineSetChar } from "./src/parser";
-import color from "./src/specials/color";
-import svg from "./src/specials/svg";
+
+import { specials, Machines, dviParser, execute, mergeText } from "./src";
+import { Writable } from 'stream';
 
 let fonts = "";
 fonts = fonts + `@font-face { font-family: esint10; src: url('./esint10.ttf'); }\n`;
@@ -16,8 +16,7 @@ fs.writeFileSync("fonts.css", fonts);
 
 let filename = 'sample.dvi';
 
-let stream = fs.createReadStream(filename,
-				 { highWaterMark: 256 });
+let stream = fs.createReadStream(filename, { highWaterMark: 256 });
 
 let html = "";
 html = html + "<html>\n";
@@ -30,25 +29,35 @@ html = html + '<div style="position: absolute;">\n';
 
 //html = html + dviParser( buffer );
 
-let parser = svg(color(combineSetChar(dviParser(stream))));
+const myWritable = new Writable({
+  write(chunk, encoding, callback) {
+    //process.stdout.write(chunk);
+    html = html + chunk;
+    callback();
+  }
+});
+
+let papersize = specials.papersize;
+let svg = specials.svg;
+let color = specials.color;
+
+let parser = papersize(svg(color(mergeText(dviParser(stream)))));
+
+let machine = new Machines.HTML(myWritable);
 
 async function main() {
-    for await (const chunk of parser) {
-      console.log(chunk);
-    }
+
+  async function run() {
+    await execute( parser, machine );
+  }
+
+  await run()
+  
+  html = html + '</div>\n';
+  html = html + '</body>\n';
+  html = html + "</html>\n";
+
+  fs.writeFileSync("index.html", html);
 }
+
 main()
-
-
-// emits each line as a buffer or as a string representing an array of fields
-//parser.on('data', function (line) {
-//  console.log(line)
-//})
-//stream.pipe( parser );
-
-html = html + '</div>\n';
-html = html + '</body>\n';
-html = html + "</html>\n";
-
-fs.writeFileSync("index.html", html);
-

@@ -201,7 +201,7 @@ export class Tfm {
   smallest_character_code : number;
   largest_character_code : number;
   checksum : number;
-  design_font_size : number;
+  designSize : number;
   character_coding_scheme : string;
   family : string;
 
@@ -231,33 +231,33 @@ export class Tfm {
   big_op_spacing: number;
 
   _lig_kerns: TfmLigKern[];
-  _chars: any;
+  characters: any;
   
   constructor(  
                  smallest_character_code,
                  largest_character_code,
                  checksum,
-                 design_font_size,
+                 designSize,
                  character_coding_scheme,
                  family) {
 
     this.smallest_character_code = smallest_character_code;
     this.largest_character_code = largest_character_code;
     this.checksum = checksum;
-    this.design_font_size = design_font_size;
+    this.designSize = designSize;
     this.character_coding_scheme = character_coding_scheme;
     this.family = family;
 
     this._lig_kerns = [];
-    this._chars = {};
+    this.characters = {};
   }
 
   get_char(x) {
-    return this._chars[x];
+    return this.characters[x];
   }
 
   set_char(x,y) {
-    this._chars[x] = y;
+    this.characters[x] = y;
   }
   
  set_font_parameters(parameters) {

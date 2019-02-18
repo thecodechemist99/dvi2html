@@ -17,3 +17,6 @@ put together for my own benefit (sourced from a few different online pages).
 - [X] TFM Parser
 - [X] Metric management (right now, fonts are found using `kpsewhich`)
 - [X] HTML/CSS/JS conversion
+
+# Building
+
