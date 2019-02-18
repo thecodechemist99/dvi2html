@@ -1,4 +1,5 @@
 import { DviCommand, merge } from '../parser';
+import { Machine } from '../machine';
 
 class SVG extends DviCommand {
   svg : string;
@@ -6,7 +7,11 @@ class SVG extends DviCommand {
   constructor(svg) {
     super({});
     this.svg = svg;
-  }  
+  }
+
+  execute(machine : Machine) {
+    machine.putSVG( this.svg );
+  }
 }
 
 async function* specialsToSVG(commands) {
@@ -30,7 +35,7 @@ export default function (commands) {
 		function*(commands) {
 		  let svg = commands
 		    .map( command => command.svg )
-		    .join()
+		    .join('')
                     .replace(/{\?nl}/g, "\n");
 		  yield new SVG( svg );
 		});

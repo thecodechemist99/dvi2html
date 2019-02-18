@@ -30,7 +30,7 @@ class Position {
   }
 }
 
-class DviFont {
+export class DviFont {
   name: string;
   checksum: number;
   scaleFactor: number;
@@ -57,6 +57,12 @@ export class Machine {
   
   preamble ( numerator : number, denominator : number, magnification : number, comment : string ) {
   }
+
+  pushColor( c : string ) {
+  }
+
+  popColor( ) {
+  }  
   
   push() {
     this.stack.push(new Position(this.position));
@@ -90,6 +96,9 @@ export class Machine {
 
   setFont( font : DviFont ) {
     this.font = font;
+  }
+
+  putSVG( svg : string ) {
   }
   
   // Returns the width of the text

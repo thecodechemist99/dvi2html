@@ -7,13 +7,37 @@ export default class HTMLMachine extends Machine {
 
   svgDepth : number;
   color : string;
-
+  colorStack : string[];
   
+  pushColor( c : string ) {
+    this.colorStack.push(this.color);
+    this.color = c;
+  }
+
+  popColor( ) {
+    this.color = this.colorStack.pop();
+  }
+
+  putSVG( svg : string ) {
+    let left = this.position.h * this.pointsPerDviUnit;
+    let top = this.position.v * this.pointsPerDviUnit;
+
+    this.svgDepth += (svg.match(/<svg>/g) || []).length;
+    this.svgDepth -= (svg.match(/<\/svg>/g) || []).length;
+    
+    svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="0 0 10 10" style="overflow: visible; position: absolute;">`);
+    
+    svg = svg.replace(/{\?x}/g, left.toString());
+    svg = svg.replace(/{\?y}/g, top.toString());
+    
+    this.output.write( svg );
+  }
   
   constructor( o : Writable ) {
     super();
     this.output = o;
     this.color = 'black';
+    this.colorStack = [];
     this.svgDepth = 0;
   }
 
@@ -50,6 +74,7 @@ export default class HTMLMachine extends Machine {
       let metrics = this.font.metrics.characters[c];
       if (metrics === undefined)
 	throw Error(`Could not find font metric for ${c}`);
+      
       textWidth += metrics.width;
       textHeight = Math.max(textHeight, metrics.height);
       textDepth = Math.max(textDepth, metrics.depth);

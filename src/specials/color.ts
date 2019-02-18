@@ -1,4 +1,5 @@
 import { DviCommand } from '../parser';
+import { Machine } from '../machine';
 
 class PushColor extends DviCommand {
   color : string;
@@ -8,6 +9,10 @@ class PushColor extends DviCommand {
     this.color = color;
   }
 
+  execute(machine : Machine) {
+    machine.pushColor( this.color );
+  }
+  
   toString() : string {
     return `PushColor { color: '${this.color}' }`;
   }  
@@ -17,6 +22,10 @@ class PopColor extends DviCommand {
   constructor() {
     super({});
   }  
+
+  execute(machine : Machine) {
+    machine.popColor();
+  }
 
   toString() : string {
     return `PopColor { }`;
