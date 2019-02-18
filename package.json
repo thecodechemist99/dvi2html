@@ -1,6 +1,6 @@
 {
   "name": "dvi2html",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Convert DVI to HTML5/CSS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
