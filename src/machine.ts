@@ -63,7 +63,10 @@ export class Machine {
 
   popColor( ) {
   }  
-  
+
+  setPapersize( width : number, height : number ) {
+  }
+    
   push() {
     this.stack.push(new Position(this.position));
   }

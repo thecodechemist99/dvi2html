@@ -23,4 +23,9 @@ export async function dvi2html( dviStream, htmlStream ) {
   let machine = new HTMLMachine( htmlStream );
 
   await execute( parser, machine );
+
+  return machine;
 }
+
+import { tfmData } from "./tfm/index";
+export { tfmData };

@@ -1,4 +1,5 @@
 import { DviCommand, merge } from '../parser';
+import { Machine } from '../machine';
 
 class Papersize extends DviCommand {
   width: number;
@@ -10,6 +11,10 @@ class Papersize extends DviCommand {
     this.height = height;
   }
 
+  execute(machine : Machine) {
+    machine.setPapersize( this.width, this.height );
+  }    
+    
   toString() : string {
     return `Papersize { width: ${this.width}, height: ${this.height} }`;
   }
@@ -35,7 +40,7 @@ export default async function*(commands) {
 
 	let width = parseFloat(sizes[0].replace(/pt$/,''));
 	let height = parseFloat(sizes[1].replace(/pt$/,''));	
-	
+
 	yield new Papersize(width, height);
       }
     }

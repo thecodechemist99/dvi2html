@@ -18,7 +18,8 @@ let filename = 'sample.dvi';
 let stream = fs.createReadStream(filename, { highWaterMark: 256 });
 
 let html = "";
-html = html + "<html>\n";
+html = html + "<!doctype html>\n";
+html = html + "<html lang=en>\n";
 html = html + "<head>\n";
 html = html + '<link rel="stylesheet" type="text/css" href="fonts.css">\n';
 html = html + '<link rel="stylesheet" type="text/css" href="base.css">\n';
@@ -46,3 +47,4 @@ async function main() {
 }
 
 main()
+console.log("DONE");

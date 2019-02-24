@@ -8,7 +8,10 @@ export default class HTMLMachine extends Machine {
   svgDepth : number;
   color : string;
   colorStack : string[];
-  
+
+  paperwidth : number;
+  paperheight : number;
+    
   pushColor( c : string ) {
     this.colorStack.push(this.color);
     this.color = c;
@@ -18,6 +21,11 @@ export default class HTMLMachine extends Machine {
     this.color = this.colorStack.pop();
   }
 
+  setPapersize( width : number, height : number ) {
+    this.paperwidth = width;
+    this.paperheight = height;  
+  }
+
   putSVG( svg : string ) {
     let left = this.position.h * this.pointsPerDviUnit;
     let top = this.position.v * this.pointsPerDviUnit;
@@ -25,7 +33,7 @@ export default class HTMLMachine extends Machine {
     this.svgDepth += (svg.match(/<svg>/g) || []).length;
     this.svgDepth -= (svg.match(/<\/svg>/g) || []).length;
     
-    svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="0 0 10 10" style="overflow: visible; position: absolute;">`);
+    svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="-5 -5 10 10" style="overflow: visible; position: absolute;">`);
     
     svg = svg.replace(/{\?x}/g, left.toString());
     svg = svg.replace(/{\?y}/g, top.toString());
@@ -100,11 +108,11 @@ export default class HTMLMachine extends Machine {
     let fontsize = (this.font.metrics.designSize / 1048576.0) * this.font.scaleFactor / this.font.designSize;
 
     if (this.svgDepth == 0) {
-      this.output.write( `<span style="color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
+	this.output.write( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
     } else {
       let bottom = this.position.v * this.pointsPerDviUnit;
       // No 'pt' on fontsize since those units are potentially scaled
-      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name}; font-size: ${fontsize};">${htmlText}</text>\n` );
+      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name};" font-size="${fontsize}">${htmlText}</text>\n` );
     }
     
     return textWidth * dviUnitsPerFontUnit * this.font.scaleFactor / this.font.designSize;

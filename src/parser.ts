@@ -910,7 +910,7 @@ export async function* dviParser(stream) {
 
 export async function execute(commands, machine) {
   for await (const command of commands) {
-    console.log(command.toString());
+    // console.log(command.toString());
     command.execute(machine);
   }
 }

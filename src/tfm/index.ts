@@ -636,11 +636,15 @@ function parse(buffer) {
   return p.tfm;
 }
 
-export function loadFont(fontname) {
+export function tfmData( fontname ) {
   if (fontdata[fontname]) {
     let buffer = Buffer.from(fontdata[fontname], 'base64');
-    return parse(buffer);
+    return buffer;
   }
-
+    
   throw Error(`Could not find font ${fontname}`);
+}
+
+export function loadFont(fontname) {
+  return parse(tfmData(fontname));
 }
