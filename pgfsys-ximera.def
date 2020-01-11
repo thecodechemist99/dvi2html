@@ -9,7 +9,6 @@
 
 \ProvidesFileRCS $Header: /cvsroot/pgf/pgf/generic/pgf/systemlayer/pgfsys-dvisvgm.def,v 1.3 2013/08/23 09:50:22 tantau Exp $
 
-
 % Driver commands for dvisvgm
 
 %
@@ -26,7 +25,6 @@
 \def\pgfsys@endpicture{\pgfsys@invoke{</g></svg>}}
 
 \def\pgfsys@svg@newline{{?nl}}
-
 
 \def\pgfsys@hbox#1{%
   {%

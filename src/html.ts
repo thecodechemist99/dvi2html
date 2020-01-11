@@ -26,6 +26,10 @@ export default class HTMLMachine extends Machine {
     this.paperheight = height;  
   }
 
+  putHTML( html : string ) {
+    this.output.write( html );
+  }
+  
   putSVG( svg : string ) {
     let left = this.position.h * this.pointsPerDviUnit;
     let top = this.position.v * this.pointsPerDviUnit;
@@ -87,8 +91,17 @@ export default class HTMLMachine extends Machine {
       textHeight = Math.max(textHeight, metrics.height);
       textDepth = Math.max(textDepth, metrics.depth);
 
-      if (c < 32) {
-	htmlText += `&#${127 + c + 32 + 4};`;
+      // This is ridiculous.
+      if ((c >= 0) && (c <= 9)) {
+        htmlText += `&#${161 + c};`;
+      } else if ((c >= 10) && (c <= 19)) {
+	htmlText += `&#${173 + c - 10};`;
+      } else if (c == 20) {
+	htmlText += `&#${8729};`; // O RLLY?!
+      } else if ((c >= 21) && (c <= 32)) {
+	htmlText += `&#${184 + c - 21};`;
+      } else if (c == 127) {
+	htmlText += `&#${196};`;
       } else {
 	htmlText += String.fromCharCode(c);
       }

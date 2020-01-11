@@ -1,6 +1,6 @@
 {
   "name": "dvi2html",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Convert DVI to HTML5/CSS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -13,10 +13,9 @@
   ],
   "author": "Jim Fowler",
   "license": "GPL-3.0",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "typescript": "^3.2.4",
-    "@types/node": "^10.12.18"
+    "@types/node": "^10.17.13",
+    "typescript": "^3.7.4"
   }
 }

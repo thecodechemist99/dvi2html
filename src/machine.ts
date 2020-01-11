@@ -103,6 +103,9 @@ export class Machine {
 
   putSVG( svg : string ) {
   }
+
+  putHTML( html : string ) {
+  }
   
   // Returns the width of the text
   putText( text : Buffer ) : number {
