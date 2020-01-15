@@ -25,7 +25,7 @@ html = html + '<link rel="stylesheet" type="text/css" href="fonts.css">\n';
 html = html + '<link rel="stylesheet" type="text/css" href="base.css">\n';
 html = html + "</head>\n";
 html = html + '<body>\n';
-html = html + '<div style="position: absolute;">\n';
+html = html + '<div style="position: absolute; width: 100%;">\n';
 
 //html = html + dviParser( buffer );
 

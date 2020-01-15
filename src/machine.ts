@@ -50,7 +50,10 @@ export class Machine {
   font : DviFont;
   stack : Position[];
   position : Position;
+  title : string;
 
+  savedPosition : Position; // for the ximera:save and ximera:restore specials
+  
   constructor () {
     this.fonts = [];
   }
@@ -101,11 +104,21 @@ export class Machine {
     this.font = font;
   }
 
+  beginSVG( ) {
+  }
+
+  endSVG( ) {
+  }  
+  
   putSVG( svg : string ) {
   }
 
   putHTML( html : string ) {
   }
+
+  setTitle( title : string ) {
+    this.title = title;
+  }  
   
   // Returns the width of the text
   putText( text : Buffer ) : number {

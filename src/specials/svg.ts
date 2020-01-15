@@ -14,16 +14,44 @@ class SVG extends DviCommand {
   }
 }
 
+class BeginSVG extends DviCommand {
+  constructor() {
+    super({});
+  }
+
+  execute(machine : Machine) {
+    machine.beginSVG();
+  }
+}
+
+class EndSVG extends DviCommand {
+  constructor() {
+    super({});
+  }
+
+  execute(machine : Machine) {
+    machine.endSVG();
+  }
+}
+
 async function* specialsToSVG(commands) {
   for await (const command of commands) {
     if (! command.special) {
       yield command;
     } else {
-      if (! command.x.startsWith('dvisvgm:raw ')) {
+      if (! command.x.startsWith('dvisvgm:')) {
 	yield command;
       } else {
-	let svg = command.x.replace(/^dvisvgm:raw /, '');
-	yield new SVG(svg);
+        if (command.x.startsWith('dvisvgm:raw')) {
+	  let svg = command.x.replace(/^dvisvgm:raw /, '');
+	  yield new SVG(svg);
+        } else if (command.x == 'dvisvgm:beginpicture') {
+          yield new BeginSVG();
+        } else if (command.x == 'dvisvgm:endpicture') {
+          yield new EndSVG();
+        } else {
+          yield command;
+        }
       }
     }
   }

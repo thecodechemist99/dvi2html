@@ -11,7 +11,15 @@ export default class HTMLMachine extends Machine {
 
   paperwidth : number;
   paperheight : number;
-    
+
+  pageContent : string[];
+  lastOutputHeight : number;
+  
+  writeToPage( content : string ) {
+    this.pageContent.push( content );
+    this.lastOutputHeight = this.position.v;
+  }
+  
   pushColor( c : string ) {
     this.colorStack.push(this.color);
     this.color = c;
@@ -26,25 +34,70 @@ export default class HTMLMachine extends Machine {
     this.paperheight = height;  
   }
 
+  
+  beginPage( page : any ) {
+    super.beginPage(page);
+    this.pageContent = [];    
+  }
+
+  endPage() {
+    let height = 0;
+    
+    if (this.savedPosition) {
+      height = Math.max( this.savedPosition.v, this.lastOutputHeight ) * this.pointsPerDviUnit;
+    }
+    
+    this.output.write(`<div style="position: relative; width: 100%; height: ${height}pt;" class="page">`);
+
+    for( let i = 0; i < this.pageContent.length; i++ ) {
+      let x = this.pageContent[i];
+      this.output.write(x);
+    }
+    
+    this.output.write(`</div>`);
+    
+    this.pageContent = [];    
+  }  
+  
   putHTML( html : string ) {
-    this.output.write( html );
+    // ignore this for now
+    // this.writeToPage( html );
+  }
+  
+  beginSVG( ) {
+    let left = this.position.h * this.pointsPerDviUnit;
+    let top = this.position.v * this.pointsPerDviUnit;
+
+    if (this.svgDepth == 0) {
+      // FIXME: Should I have 0.99624in instead of 1in ?
+      this.writeToPage( `<svg width="1in" height="1in" viewBox="0 0 72 72" style="position: absolute; top: ${top}pt; left: ${left}pt; overflow: visible;">\n` );
+    } else {
+      this.writeToPage( `<g transform="translate(${left},${top})">\n` );
+    }
+    
+    this.svgDepth += 1;
+  }
+
+  endSVG( ) {
+    this.svgDepth -= 1;
+
+    if (this.svgDepth == 0) {
+      this.writeToPage( '</svg>' );
+    } else {
+      this.writeToPage( '</g>' );
+    }
   }
   
   putSVG( svg : string ) {
     let left = this.position.h * this.pointsPerDviUnit;
     let top = this.position.v * this.pointsPerDviUnit;
-
-    this.svgDepth += (svg.match(/<svg>/g) || []).length;
-    this.svgDepth -= (svg.match(/<\/svg>/g) || []).length;
-    
-    svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="-5 -5 10 10" style="overflow: visible; position: absolute;">`);
     
     svg = svg.replace(/{\?x}/g, left.toString());
     svg = svg.replace(/{\?y}/g, top.toString());
-    
-    this.output.write( svg );
+
+    this.writeToPage( svg );
   }
-  
+
   constructor( o : Writable ) {
     super();
     this.output = o;
@@ -70,8 +123,14 @@ export default class HTMLMachine extends Machine {
     let left = this.position.h * this.pointsPerDviUnit;
     let bottom = this.position.v * this.pointsPerDviUnit;
     let top = bottom - a;
-    
-    this.output.write(`<span style="background: ${this.color}; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; height: ${a}pt;"></span>\n`);
+
+    if (this.svgDepth == 0) {
+      const height = `${a}pt`;
+      // https://annualbeta.com/blog/1px-hairline-css-borders-on-hidpi-screens/
+      this.writeToPage(`<span style="background: ${this.color}; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; min-width: 1px; min-height: 1px; height: ${height};"></span>\n`);
+    } else {
+      this.writeToPage(`<rect x="${left}" y="${top}" width="${b}" height="${a}"/>\n`);
+    }
   }
     
   putText( text : Buffer ) : number {
@@ -121,11 +180,11 @@ export default class HTMLMachine extends Machine {
     let fontsize = (this.font.metrics.designSize / 1048576.0) * this.font.scaleFactor / this.font.designSize;
 
     if (this.svgDepth == 0) {
-	this.output.write( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
+	this.writeToPage( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
     } else {
       let bottom = this.position.v * this.pointsPerDviUnit;
       // No 'pt' on fontsize since those units are potentially scaled
-      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name};" font-size="${fontsize}">${htmlText}</text>\n` );
+      this.writeToPage( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name};" font-size="${fontsize}">${htmlText}</text>\n` );
     }
     
     return textWidth * dviUnitsPerFontUnit * this.font.scaleFactor / this.font.designSize;
