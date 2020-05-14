@@ -84,8 +84,11 @@ export default class HTMLMachine extends Machine {
     for( let i = 0; i < text.length; i++ ) {
       let c = text[i];
       let metrics = this.font.metrics.characters[c];
-      if (metrics === undefined)
-	throw Error(`Could not find font metric for ${c}`);
+      if (metrics === undefined){
+        //TODO: Handle this better. Error only happens for c === 127
+	      console.error(`Could not find font metric for ${c}`);
+	      metrics = this.font.metrics.characters[126];
+      }
       
       textWidth += metrics.width;
       textHeight = Math.max(textHeight, metrics.height);
