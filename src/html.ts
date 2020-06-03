@@ -151,18 +151,23 @@ export default class HTMLMachine extends Machine {
       textDepth = Math.max(textDepth, metrics.depth);
 
       // This is ridiculous.
-      if ((c >= 0) && (c <= 9)) {
-        htmlText += `&#${161 + c};`;
-      } else if ((c >= 10) && (c <= 19)) {
-	htmlText += `&#${173 + c - 10};`;
-      } else if (c == 20) {
-	htmlText += `&#${8729};`; // O RLLY?!
-      } else if ((c >= 21) && (c <= 32)) {
-	htmlText += `&#${184 + c - 21};`;
-      } else if (c == 127) {
-	htmlText += `&#${196};`;
-      } else {
-	htmlText += String.fromCharCode(c);
+      if (this.font.name === 'esint10') {
+        htmlText += `&#${c + 65 - 1};`;
+      }
+      else {
+        if ((c >= 0) && (c <= 9)) {
+          htmlText += `&#${161 + c};`;
+        } else if ((c >= 10) && (c <= 19)) {
+	  htmlText += `&#${173 + c - 10};`;
+        } else if (c == 20) {
+	  htmlText += `&#${8729};`; // O RLLY?!
+        } else if ((c >= 21) && (c <= 32)) {
+	  htmlText += `&#${184 + c - 21};`;
+        } else if (c == 127) {
+	  htmlText += `&#${196};`;
+        } else {
+	  htmlText += String.fromCharCode(c);
+        }
       }
     }
     

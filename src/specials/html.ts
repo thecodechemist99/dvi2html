@@ -14,8 +14,8 @@ class HTML extends DviCommand {
   }
 }
 
-async function* specialsToHTML(commands) {
-  for await (const command of commands) {
+function* specialsToHTML(commands) {
+  for (const command of commands) {
     if (! command.special) {
       yield command;
     } else {

@@ -14,8 +14,8 @@ class Title extends DviCommand {
   }
 }
 
-async function* specialsToTitle(commands) {
-  for await (const command of commands) {
+function* specialsToTitle(commands) {
+  for (const command of commands) {
     if (! command.special) {
       yield command;
     } else {

@@ -46,8 +46,8 @@ class XimeraRestore extends DviCommand {
 }
 
 
-async function* specialsToXimera(commands) {
-  for await (const command of commands) {
+function* specialsToXimera(commands) {
+  for (const command of commands) {
     if (! command.special) {
       yield command;
     } else {

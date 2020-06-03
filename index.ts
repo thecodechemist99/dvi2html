@@ -4,7 +4,7 @@ import { dvi2html } from "./src";
 import { Writable } from 'stream';
 
 let fonts = "";
-fonts = fonts + `@font-face { font-family: esint10; src: url('./esint10.ttf'); }\n`;
+fonts = fonts + `@font-face { font-family: esint10; src: url('./esint/esint10.ttf'); }\n`;
 fs.readdirSync('./bakoma/ttf').forEach(file => {
   let name = file.replace(/.ttf/, '');
   fonts = fonts + `@font-face { font-family: ${name}; src: url('bakoma/ttf/${file}'); }\n`;
@@ -16,6 +16,7 @@ fs.writeFileSync("fonts.css", fonts);
 let filename = 'sample.dvi';
 
 let stream = fs.createReadStream(filename, { highWaterMark: 256 });
+var buffer = fs.readFileSync(filename);
 
 let html = "";
 html = html + "<!doctype html>\n";
@@ -37,7 +38,7 @@ const myWritable = new Writable({
 });
 
 async function main() {
-  await dvi2html( stream, myWritable );
+  dvi2html( buffer, myWritable );
   
   html = html + '</div>\n';
   html = html + '</body>\n';

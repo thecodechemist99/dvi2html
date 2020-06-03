@@ -51,10 +51,10 @@ function texColor(name) {
   return 'black';
 }
 
-export default async function* (commands) {
+export default function* (commands) {
   let queue = [];
 
-  for await (const command of commands) {
+  for (const command of commands) {
     if (! command.special) {
       yield command;
     } else {

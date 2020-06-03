@@ -32,7 +32,8 @@ var desiredFonts = [
   "eurm5", "eurm6", "eurm7", "eurm8", "eurm9", "eusb10", "eusb5", 
   "eusb6", "eusb7", "eusb8", "eusb9", "eusm10", "eusm5", "eusm6", 
   "eusm7", "eusm8", "eusm9", "msam10", "msam5", "msam6", "msam7", 
-  "msam8", "msam9", "msbm10", "msbm5", "msbm6", "msbm7", "msbm8", "msbm9" 
+  "msam8", "msam9", "msbm10", "msbm5", "msbm6", "msbm7", "msbm8", "msbm9",
+  "esint10"
 ];
 
 desiredFonts.forEach( function(fontname) {

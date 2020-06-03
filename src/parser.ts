@@ -872,53 +872,45 @@ function parseCommand( opcode : Opcode, buffer : Buffer ) : Command | void {
   return undefined;
 }
 
-export async function* dviParser(stream) {
-  let buffer = Buffer.alloc(0);
+export function* dviParser(buffer) {
   let isAfterPostamble = false;
+  let offset = 0;
     
-  for await (const chunk of stream) {
-    buffer = Buffer.concat([buffer, chunk]);
-    let offset = 0;
-    
-    while(offset < buffer.length) {
-      let opcode : Opcode = buffer.readUInt8(offset);
+  while(offset < buffer.length) {
+    let opcode : Opcode = buffer.readUInt8(offset);
 
-      if (isAfterPostamble) {
-	if (opcode == 223) {
-	  offset++;
-	  continue;
-	} else {
-	  throw Error('Only 223 bytes are permitted after the post-postamble.');
-	}
+    if (isAfterPostamble) {
+      if (opcode == 223) {
+	offset++;
+	continue;
+      } else {
+	throw Error('Only 223 bytes are permitted after the post-postamble.');
       }
-
-      let command = parseCommand( opcode, buffer.slice(offset+1) );
-
-      if (command) {
-	yield command;
-	offset += command.length;
-
-	if (command.opcode == Opcode.post_post)
-	  isAfterPostamble = true;
-      } else
-	break;
     }
+    
+    let command = parseCommand( opcode, buffer.slice(offset+1) );
 
-    buffer = buffer.slice(offset);
+    if (command) {
+      yield command;
+      offset += command.length;
+      
+      if (command.opcode == Opcode.post_post)
+	isAfterPostamble = true;
+    } else
+      break;
   }
 }
 
-export async function execute(commands, machine) {
-  for await (const command of commands) {
-    // console.log(command.toString());
+export function execute(commands, machine) {
+  for (const command of commands) {
     command.execute(machine);
   }
 }
 
-export async function* merge(commands, filter, merge) {
+export function* merge(commands, filter, merge) {
   let queue = [];
 
-  for await (const command of commands) {
+  for (const command of commands) {
     if (filter(command)) {
       queue.push( command );
     } else {

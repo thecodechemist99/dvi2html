@@ -34,8 +34,8 @@ class EndSVG extends DviCommand {
   }
 }
 
-async function* specialsToSVG(commands) {
-  for await (const command of commands) {
+function* specialsToSVG(commands) {
+  for (const command of commands) {
     if (! command.special) {
       yield command;
     } else {

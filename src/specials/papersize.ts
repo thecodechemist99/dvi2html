@@ -20,8 +20,8 @@ class Papersize extends DviCommand {
   }
 }
 
-export default async function*(commands) {
-  for await (const command of commands) {
+export default function*(commands) {
+  for (const command of commands) {
     if (! command.special) {
       yield command;
     } else {
