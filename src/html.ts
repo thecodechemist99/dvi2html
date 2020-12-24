@@ -71,7 +71,7 @@ export default class HTMLMachine extends Machine {
     let bottom = this.position.v * this.pointsPerDviUnit;
     let top = bottom - a;
     
-    this.output.write(`<span style="background: ${this.color}; position: absolute; top: ${top}pt; left: ${left}pt; width:${b}pt; height: ${a}pt;"></span>\n`);
+    this.output.write(`<rect x="${left}" y="${top}" width="${b}" height="${a}" style="fill:${this.color};"></rect>\n`);
   }
     
   putText( text : Buffer ) : number {
