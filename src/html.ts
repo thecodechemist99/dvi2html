@@ -37,7 +37,7 @@ export default class HTMLMachine extends Machine {
     this.svgDepth += (svg.match(/<svg>/g) || []).length;
     this.svgDepth -= (svg.match(/<\/svg>/g) || []).length;
     
-    svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="-5 -5 10 10" style="overflow: visible; position: absolute;">`);
+    svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="-5 -5 10 10" style="overflow: visible;">`);
     
     svg = svg.replace(/{\?x}/g, left.toString());
     svg = svg.replace(/{\?y}/g, top.toString());
