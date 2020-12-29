@@ -2,6 +2,7 @@ var tfm = require('./index.ts');
 var path = require('path');
 var fs = require('fs');
 var outputPath = path.join(__dirname,'../tfm/fontsfull.json');
+var Buffer = require('buffer').Buffer;
 
 var fonts = {};
 

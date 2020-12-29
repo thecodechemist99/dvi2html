@@ -13,7 +13,9 @@
   ],
   "author": "Jim Fowler",
   "license": "GPL-3.0",
-  "dependencies": {},
+  "dependencies": {
+    "buffer": "^6.0.3"
+  },
   "devDependencies": {
     "@types/node": "^10.17.13",
     "typescript": "^3.7.4"

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /////////////////////////////////////////////////////////////////////////////
 
+import { Buffer } from "buffer";
 import * as Tfm from "./tfm";
 import * as fontdata from "./fonts.json";
 

@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { Machine } from "./machine";
 
 enum Opcode {
