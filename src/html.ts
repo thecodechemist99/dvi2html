@@ -38,12 +38,19 @@ export default class HTMLMachine extends Machine {
     this.svgDepth -= (svg.match(/<\/svg>/g) || []).length;
     
     if (this.svgDepth > 1) {
-        // In this case we are already inside another svg element so drop the svg tags.
+        // In this case we are inside another svg element so drop the svg start tags.
         svg = svg.replace("<svg>", "");
-        svg = svg.replace("<\/svg>", "");
+    } else {
+        svg = svg.replace("<svg>", `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ` +
+                          `xmlns:xlink="http://www.w3.org/1999/xlink" ` +
+                          `width="${this.paperwidth + 1}pt" height="${this.paperheight + 1}pt" ` +
+                          `viewBox="-73 -73 ${this.paperwidth + 1} ${this.paperheight + 1}" ` +
+                          `style="overflow:visible">`);
     }
-    else {
-        svg = svg.replace("<svg>", `<svg width="10pt" height="10pt" viewBox="-5 -5 10 10" style="overflow: visible;">`);
+
+    if (this.svgDepth > 0) {
+        // In this case we are inside another svg element so drop the svg end tags.
+        svg = svg.replace("<\/svg>", "");
     }
     
     svg = svg.replace(/{\?x}/g, left.toString());
