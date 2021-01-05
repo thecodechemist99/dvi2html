@@ -22,3 +22,8 @@ put together for my own benefit (sourced from a few different online pages).
 
 # Building
 
+Run
+```
+npm install
+```
+Not that this will automatically run `npm run build` after all node packages are installed.
