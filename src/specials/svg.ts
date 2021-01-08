@@ -36,7 +36,7 @@ export default function (commands) {
 		  let svg = commands
 		    .map( command => command.svg )
 		    .join('')
-                    .replace(/{\?nl}/g, "\n");
+                    .replace(/{\?nl}/g, "");
 		  yield new SVG( svg );
 		});
 }

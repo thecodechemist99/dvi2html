@@ -85,7 +85,7 @@ export default class HTMLMachine extends Machine {
     let bottom = this.position.v * this.pointsPerDviUnit;
     let top = bottom - a;
     
-    this.output.write(`<rect x="${left}" y="${top}" width="${b}" height="${a}" style="fill:${this.color};"></rect>\n`);
+    this.output.write(`<rect x="${left}" y="${top}" width="${b}" height="${a}" style="fill:${this.color};"></rect>`);
   }
     
   putText( text : Buffer ) : number {
@@ -138,11 +138,11 @@ export default class HTMLMachine extends Machine {
     let fontsize = (this.font.metrics.designSize / 1048576.0) * this.font.scaleFactor / this.font.designSize;
 
     if (this.svgDepth == 0) {
-	this.output.write( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
+	this.output.write( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>` );
     } else {
       let bottom = this.position.v * this.pointsPerDviUnit;
       // No 'pt' on fontsize since those units are potentially scaled
-      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name};" font-size="${fontsize}">${htmlText}</text>\n` );
+      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name};" font-size="${fontsize}">${htmlText}</text>` );
     }
     
     return textWidth * dviUnitsPerFontUnit * this.font.scaleFactor / this.font.designSize;
