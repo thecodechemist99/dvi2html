@@ -43,9 +43,8 @@ export default class HTMLMachine extends Machine {
     } else {
         svg = svg.replace("<svg>", `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ` +
                           `xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-                          `width="${this.paperwidth + 1}pt" height="${this.paperheight + 1}pt" ` +
-                          `viewBox="-73 -73 ${this.paperwidth + 1} ${this.paperheight + 1}" ` +
-                          `style="overflow:visible">`);
+                          `width="${this.paperwidth}pt" height="${this.paperheight}pt" ` +
+                          `viewBox="-72 -72 ${this.paperwidth} ${this.paperheight}">`);
     }
 
     if (this.svgDepth > 0) {
