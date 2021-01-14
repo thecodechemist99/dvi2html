@@ -84,7 +84,7 @@ export default class HTMLMachine extends Machine {
     let bottom = this.position.v * this.pointsPerDviUnit;
     let top = bottom - a;
     
-    this.output.write(`<rect x="${left}" y="${top}" width="${b}" height="${a}" style="fill:${this.color};"></rect>`);
+    this.output.write(`<rect x="${left}" y="${top}" width="${b}" height="${a}" fill="${this.color}"></rect>`);
   }
     
   putText( text : Buffer ) : number {
@@ -141,7 +141,7 @@ export default class HTMLMachine extends Machine {
     } else {
       let bottom = this.position.v * this.pointsPerDviUnit;
       // No 'pt' on fontsize since those units are potentially scaled
-      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" style="font-family: ${this.font.name};" font-size="${fontsize}">${htmlText}</text>` );
+      this.output.write( `<text alignment-baseline="baseline" y="${bottom}" x="${left}" font-family="${this.font.name}" font-size="${fontsize}" fill="${this.color}">${htmlText}</text>` );
     }
     
     return textWidth * dviUnitsPerFontUnit * this.font.scaleFactor / this.font.designSize;
