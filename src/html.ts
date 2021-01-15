@@ -34,23 +34,26 @@ export default class HTMLMachine extends Machine {
     let left = this.position.h * this.pointsPerDviUnit;
     let top = this.position.v * this.pointsPerDviUnit;
 
-    this.svgDepth += (svg.match(/<svg>/g) || []).length;
-    this.svgDepth -= (svg.match(/<\/svg>/g) || []).length;
-    
-    if (this.svgDepth > 1) {
-        // In this case we are inside another svg element so drop the svg start tags.
-        svg = svg.replace("<svg>", "");
-    } else {
-        svg = svg.replace("<svg>", `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ` +
-                          `xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-                          `width="${this.paperwidth}pt" height="${this.paperheight}pt" ` +
-                          `viewBox="-72 -72 ${this.paperwidth} ${this.paperheight}">`);
-    }
+    this.svgDepth += (svg.match(/<svg.*>/g) || []).length;
+    this.svgDepth -= (svg.match(/<\/svg.*>/g) || []).length;
 
-    if (this.svgDepth > 0) {
-        // In this case we are inside another svg element so drop the svg end tags.
-        svg = svg.replace("<\/svg>", "");
-    }
+	if (svg.match(/<svg beginpicture>/)) {
+		if (this.svgDepth > 1) {
+			// In this case we are inside another svg element so drop the svg start tags.
+			svg = svg.replace("<svg beginpicture>", "");
+		} else {
+			svg = svg.replace("<svg beginpicture>", `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ` +
+							  `xmlns:xlink="http://www.w3.org/1999/xlink" ` +
+							  `width="${this.paperwidth}pt" height="${this.paperheight}pt" ` +
+							  `viewBox="-72 -72 ${this.paperwidth} ${this.paperheight}">`);
+		}
+	}
+
+	if (svg.match(/<\/svg endpicture>/)) {
+		// If we are inside another svg element, then drop the svg end tag.
+		// Otherwise just remove the " endpicture" bit.
+		svg = svg.replace("<\/svg endpicture>", this.svgDepth > 0 ? "" : "<\/svg>");
+	}
     
     svg = svg.replace(/{\?x}/g, left.toString());
     svg = svg.replace(/{\?y}/g, top.toString());
