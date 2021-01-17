@@ -2,6 +2,7 @@
 
 import { Tfm } from './tfm/tfm';
 import { loadFont } from './tfm/index';
+import Matrix from './matrix';
 
 export interface Rule {
   a : number;
@@ -50,9 +51,11 @@ export class Machine {
   font : DviFont;
   stack : Position[];
   position : Position;
+  matrix: Matrix;
 
   constructor () {
     this.fonts = [];
+	this.matrix = new Matrix();
   }
   
   preamble ( numerator : number, denominator : number, magnification : number, comment : string ) {
@@ -85,7 +88,11 @@ export class Machine {
   post( p : any ) { }
   
   postPost( p : any ) { }
+
+  getCurrentPosition(): [number, number] { return [this.position.h, this.position.v]; }
   
+  setCurrentPosition(x: number, y: number) { this.position.h = x; this.position.v = y; }
+
   putRule( rule : Rule ) {
   }
 

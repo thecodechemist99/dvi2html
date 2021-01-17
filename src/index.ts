@@ -1,5 +1,6 @@
 import color from "./specials/color";
 import svg from "./specials/svg";
+import ps from "./specials/ps";
 //import html from "./specials/html";
 import papersize from "./specials/papersize";
 
@@ -20,7 +21,7 @@ export var specials = {
 };
 
 export async function dvi2html( dviStream, htmlStream ) {
-  let parser = papersize(svg(color(mergeText(dviParser(dviStream)))));
+  let parser = papersize(svg(ps(color(mergeText(dviParser(dviStream))))));
 
   let machine = new HTMLMachine( htmlStream );
 
