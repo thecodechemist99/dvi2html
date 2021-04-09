@@ -10,7 +10,12 @@ class XimeraBegin extends DviCommand {
   }
 
   execute(machine : Machine) {
+    machine.pushXimera( this.environment );
   }
+  
+  toString() : string {
+    return `pushXimera { environment: '${this.environment}' }`;
+  }  
 }
 
 class XimeraEnd extends DviCommand {
@@ -22,7 +27,29 @@ class XimeraEnd extends DviCommand {
   }
 
   execute(machine : Machine) {
+    machine.popXimera();
+  }
+  
+  toString() : string {
+    return `popXimera { }`;
   }    
+}
+
+class XimeraRule extends DviCommand {
+  rule: string;
+  
+  constructor(rule : string) {
+    super({});
+    this.rule = rule;
+  }
+
+  execute(machine : Machine) {
+    machine.setXimeraRule( this.rule );
+  }
+  
+  toString() : string {
+    return `setXimeraRule { rule: '${this.rule}' }`;
+  }  
 }
 
 class XimeraSave extends DviCommand {
@@ -54,7 +81,10 @@ function* specialsToXimera(commands) {
       if (! command.x.startsWith('ximera:')) {
 	yield command;
       } else {
-        if (command.x.startsWith('ximera:begin ')) {
+        if (command.x.startsWith('ximera:rule ')) {
+	  let ximera = command.x.replace(/^ximera:rule /, '');
+	  yield new XimeraRule(ximera);
+        } else if (command.x.startsWith('ximera:begin ')) {
 	  let ximera = command.x.replace(/^ximera:begin /, '');
 	  yield new XimeraBegin(ximera);
         } else if (command.x.startsWith('ximera:end ')) {

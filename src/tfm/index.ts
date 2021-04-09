@@ -214,8 +214,6 @@ class TFMParser {
       this.table_lengths[i] = this.read_unsigned_byte2();
     }
 
-
-
     //////////////////////
     // Compute table pointers
     this.table_pointers = [];
@@ -437,7 +435,8 @@ class TFMParser {
     
     if (first_skip_byte == 255) {
       var right_boundary_char = next_char;
-      throw Error('Font has right boundary char');
+      //throw Error('Font has right boundary char');
+      console.log('Warning: font has right boundary char');
     }
 
     this.seek_to_table(tables.lig_kern, this.table_lengths[tables.lig_kern] - 1);
@@ -448,7 +447,8 @@ class TFMParser {
                                                             
     if (last_skip_byte == 255) {
       let left_boundary_char_program_index = 256*op_byte + remainder;
-      throw Error('Font has left boundary char program');
+      //throw Error('Font has left boundary char program');
+      console.log('Warning: font has left boundary char');
     }
 
     // Read the instructions

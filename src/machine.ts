@@ -65,7 +65,16 @@ export class Machine {
   }
 
   popColor( ) {
-  }  
+  }
+
+  setXimeraRule( r : string ) {
+  }
+  
+  pushXimera( e : string ) {
+  }
+
+  popXimera( ) {
+  }    
 
   setPapersize( width : number, height : number ) {
   }

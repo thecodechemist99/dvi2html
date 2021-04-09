@@ -7,14 +7,16 @@
   "scripts": {
     "prepare": "npm run build",
     "compile": "tsc",
-    "build": "node tools/tfm2json.js && npm run compile"
+    "build": "node tools/tfm2json.js && node tools/glyphs.js && npm run compile"
   },
   "files": [
     "lib/**/*"
   ],
   "author": "Jim Fowler",
   "license": "GPL-3.0",
-  "dependencies": {},
+  "dependencies": {
+    "eslint": "^7.23.0"
+  },
   "devDependencies": {
     "@types/node": "^10.17.13",
     "typescript": "^3.7.4"

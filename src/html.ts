@@ -1,6 +1,16 @@
 import { Machine, Rule } from "./machine";
 import { Writable } from 'stream';
 
+import * as glyphs from './tfm/encodings.json';
+import * as fontlist from '../tools/fontlist.json';
+
+/*
+let glyphs = {};
+Object.keys(encodings).map( (encoding) => {
+  glyphs[encoding] = new Uint16Array( Buffer.from(encodings[encoding], 'base64') );
+});
+*/
+
 export default class HTMLMachine extends Machine {
   output : Writable;
   pointsPerDviUnit : number;
@@ -14,6 +24,9 @@ export default class HTMLMachine extends Machine {
 
   pageContent : string[];
   lastOutputHeight : number;
+
+  lastTextV : number;
+  lastTextRight : number;  
   
   writeToPage( content : string ) {
     this.pageContent.push( content );
@@ -61,7 +74,10 @@ export default class HTMLMachine extends Machine {
   
   putHTML( html : string ) {
     // ignore this for now
-    // this.writeToPage( html );
+    if (html == '<p>')
+      this.writeToPage( '<p role="text">' );      
+    else
+      this.writeToPage( html );
   }
   
   beginSVG( ) {
@@ -150,7 +166,15 @@ export default class HTMLMachine extends Machine {
       textHeight = Math.max(textHeight, metrics.height);
       textDepth = Math.max(textDepth, metrics.depth);
 
+      let encoding = fontlist[this.font.name];
+      if (this.font.name == 'cmmi10') {
+        console.log(this.font.name, encoding, JSON.stringify(glyphs[encoding]));
+      }
+      let codepoint = glyphs[encoding][c];
+      htmlText += `&#${codepoint};`;
+      
       // This is ridiculous.
+      /*
       if (this.font.name === 'esint10') {
         htmlText += `&#${c + 65 - 1};`;
       }
@@ -168,7 +192,7 @@ export default class HTMLMachine extends Machine {
         } else {
 	  htmlText += String.fromCharCode(c);
         }
-      }
+      }*/
     }
     
     // tfm is based on 1/2^16 pt units, rather than dviunit which is 10^−7 meters
@@ -185,7 +209,14 @@ export default class HTMLMachine extends Machine {
     let fontsize = (this.font.metrics.designSize / 1048576.0) * this.font.scaleFactor / this.font.designSize;
 
     if (this.svgDepth == 0) {
-	this.writeToPage( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
+      let space = '';
+      if ((this.lastTextV == this.position.v) && (left > this.lastTextRight + 2)) {
+        space = '<span style="display: inline-block; width: 0pt;">&nbsp;</span>';
+      }
+      
+      this.writeToPage( `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${fontsize}pt; position: absolute; top: ${top - height}pt; left: ${left}pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${fontsize}pt; display: inline-block; vertical-align: baseline; ">${space}${htmlText}</span><span style="display: inline-block; vertical-align: ${height}pt; height: ${0}pt; line-height: 0;"></span></span>\n` );
+      this.lastTextV = this.position.v;
+      this.lastTextRight = left + width;
     } else {
       let bottom = this.position.v * this.pointsPerDviUnit;
       // No 'pt' on fontsize since those units are potentially scaled
