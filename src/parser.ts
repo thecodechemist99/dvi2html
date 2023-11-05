@@ -61,7 +61,8 @@ enum Opcode {
   fnt_def4 = 246,    
   pre = 247,
   post = 248,
-  post_post = 249
+  post_post = 249,
+  post_post_repeats = 223
 }
 
 export class DviCommand {
@@ -911,7 +912,6 @@ export async function* dviParser(stream) {
 
 export async function execute(commands, machine) {
   for await (const command of commands) {
-    // console.log(command.toString());
     command.execute(machine);
   }
 }
