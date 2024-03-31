@@ -13,7 +13,10 @@ function processTfmFile( fontname, filename ) {
 }
 
 var desiredFonts = [
-  "cmb10", "cmbsy10", "cmbsy6", "cmbsy7", "cmbsy8", "cmbsy9", "cmbx10", 
+  "cmbsy5", "dummy", "wncyb10", "wncyb5", "wncyb6", "wncyb7", "wncyb8", "wncyb9",
+  "wncyi10", "wncyi5", "wncyi6", "wncyi7", "wncyi8", "wncyi9", "wncyr10", "wncyr5",
+  "wncyr6", "wncyr7", "wncyr8", "wncyr9", "wncysc10", "wncyss10", "wncyss8", "wncyss9",
+  "cmmib5", "cmb10", "cmbsy10", "cmbsy6", "cmbsy7", "cmbsy8", "cmbsy9", "cmbx10", 
   "cmbx12", "cmbx5", "cmbx6", "cmbx7", "cmbx8", "cmbx9", "cmbxsl10", 
   "cmbxti10", "cmcsc10", "cmcsc8", "cmcsc9", "cmdunh10", "cmex10", 
   "cmex7", "cmex8", "cmex9", "cmff10", "cmfi10", "cmfib8", "cminch", 
