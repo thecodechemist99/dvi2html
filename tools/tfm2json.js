@@ -2,6 +2,7 @@ var path = require('path');
 var fs = require('fs');
 var outputPath = path.join(__dirname,'../src/tfm/fonts.json');
 var execSync = require('child_process').execSync;
+var os = require('os');
 
 var fonts = {};
 
@@ -39,7 +40,12 @@ var desiredFonts = [
 ];
 
 desiredFonts.forEach( function(fontname) {
-  var filename = execSync('kpsewhich ' + fontname + '.tfm').toString().split("\n")[0];
+  var filename;
+  if (os.type() === "Windows_NT") {
+    filename = execSync('kpsewhich ' + fontname + '.tfm').toString().split("\r\n")[0];
+  } else {
+    filename = execSync('kpsewhich ' + fontname + '.tfm').toString().split("\n")[0];
+  }
   processTfmFile( fontname, filename );  
 });
 
